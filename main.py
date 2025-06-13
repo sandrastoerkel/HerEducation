@@ -215,41 +215,41 @@ if st.session_state.language == "DE":
     <h3>🌍 Globale Anwendbarkeit & Cross-Cultural Adaptability</h3>
     
     <div class="methodology-highlight">
-    <h4>📊 Bewährte Methodik - Überall anwendbar:</h4>
+    <h4>📊 Bewährte Methodik - Aktuell implementiert:</h4>
     <strong>Schritt 1:</strong> UNESCO-Bildungsdaten-Integration (verfügbar für 196 Länder)<br>
-    <strong>Schritt 2:</strong> Lokale Social Media Discourse Analysis (YouTube, Facebook, Twitter)<br>
-    <strong>Schritt 3:</strong> Kulturspezifische NLP-Modellierung (jede Sprache adaptierbar)<br>
-    <strong>Schritt 4:</strong> Cross-Country Benchmarking & Policy Recommendations<br>
-    <strong>Schritt 5:</strong> Real-time Impact Monitoring & Evaluation
+    <strong>Schritt 2:</strong> YouTube Comment Analysis (Deutsch/Englisch)<br>
+    <strong>Schritt 3:</strong> NLP-Modellierung (Sentiment, Emotion, Topics)<br>
+    <strong>Schritt 4:</strong> Cross-Country Data Comparison<br>
+    <strong>Schritt 5:</strong> Manual Analysis & Reporting
     </div>
     
     <div class="impact-grid">
     <div class="impact-card">
-    <h4>🇲🇾 Südostasien (Pilot)</h4>
-    <strong>Malaysia:</strong> 50+ Länder-Sentiment-Analyse<br>
-    <strong>Adaptierbar für:</strong> Indonesien, Thailand, Philippinen<br>
-    <strong>Sprachen:</strong> Malaiisch, Englisch, Chinesisch, Tamil
+    <h4>🌍 Global YouTube Analysis</h4>
+    <strong>Sprachen:</strong> Deutsch, Englisch (andere gefiltert)<br>
+    <strong>Länder:</strong> Alle mit DE/EN YouTube-Kommentaren<br>
+    <strong>Analyse:</strong> Sentiment, Emotion, Topics zu Bildung
     </div>
     
     <div class="impact-card">
-    <h4>🌍 Afrika (Expansion)</h4>
-    <strong>Potenzielle Märkte:</strong> Nigeria, Kenia, Südafrika<br>
-    <strong>Anpassungen:</strong> Lokale Sprachen, Bildungssysteme<br>
-    <strong>Focus:</strong> Rural Education, Gender Barriers
+    <h4>🎯 Themen-Extraktion</h4>
+    <strong>Topics:</strong> Automatische Erkennung von Diskussionsthemen<br>
+    <strong>Emotions:</strong> 6-Emotion-Analyse (Freude, Wut, Trauer, etc.)<br>
+    <strong>Search:</strong> Suche nach spezifischen Begriffen (z.B. "Stolz")
     </div>
     
     <div class="impact-card">
-    <h4>🇪🇺 Europa/Nordamerika</h4>
-    <strong>Anwendung:</strong> Migrant/Refugee Education<br>
-    <strong>Zielgruppe:</strong> Diaspora-Communities<br>
-    <strong>Sprachen:</strong> Deutsch, Englisch, Französisch
+    <h4>📊 UNESCO Integration</h4>
+    <strong>Data:</strong> 196 Länder Bildungspolitik-Daten<br>
+    <strong>Analysis:</strong> Gender Gaps, Policy Comparison<br>
+    <strong>Visualisierung:</strong> Interactive Dashboards
     </div>
     
     <div class="impact-card">
-    <h4>🇮🇳 Südasien</h4>
-    <strong>Skalierung:</strong> Indien, Pakistan, Bangladesch<br>
-    <strong>Komplexität:</strong> Multiple Sprachen, Kastensystem<br>
-    <strong>Potenzial:</strong> 500+ Millionen Mädchen
+    <h4>🔄 Potenzial für Erweiterung</h4>
+    <strong>Mehr Sprachen:</strong> NLP-Pipeline erweiterbar<br>
+    <strong>Mehr Plattformen:</strong> Facebook, Twitter möglich<br>
+    <strong>Automation:</strong> Batch-Processing implementierbar
     </div>
     </div>
     </div>
@@ -260,41 +260,41 @@ else:
     <h3>🌍 Global Applicability & Cross-Cultural Adaptability</h3>
     
     <div class="methodology-highlight">
-    <h4>📊 Proven Methodology - Applicable Everywhere:</h4>
+    <h4>📊 Proven Methodology - Currently Implemented:</h4>
     <strong>Step 1:</strong> UNESCO Education Data Integration (available for 196 countries)<br>
-    <strong>Step 2:</strong> Local Social Media Discourse Analysis (YouTube, Facebook, Twitter)<br>
-    <strong>Step 3:</strong> Culture-specific NLP Modeling (adaptable to any language)<br>
-    <strong>Step 4:</strong> Cross-Country Benchmarking & Policy Recommendations<br>
-    <strong>Step 5:</strong> Real-time Impact Monitoring & Evaluation
+    <strong>Step 2:</strong> YouTube Comment Analysis (German/English)<br>
+    <strong>Step 3:</strong> NLP Modeling (Sentiment, Emotion, Topics)<br>
+    <strong>Step 4:</strong> Cross-Country Data Comparison<br>
+    <strong>Step 5:</strong> Manual Analysis & Reporting
     </div>
     
     <div class="impact-grid">
     <div class="impact-card">
-    <h4>🇲🇾 Southeast Asia (Pilot)</h4>
-    <strong>Malaysia:</strong> 50+ Countries Sentiment Analysis<br>
-    <strong>Adaptable for:</strong> Indonesia, Thailand, Philippines<br>
-    <strong>Languages:</strong> Malay, English, Chinese, Tamil
+    <h4>🌍 Global YouTube Analysis</h4>
+    <strong>Languages:</strong> German, English (others filtered)<br>
+    <strong>Countries:</strong> All with DE/EN YouTube comments<br>
+    <strong>Analysis:</strong> Sentiment, emotion, topics on education
     </div>
     
     <div class="impact-card">
-    <h4>🌍 Africa (Expansion)</h4>
-    <strong>Potential Markets:</strong> Nigeria, Kenya, South Africa<br>
-    <strong>Adaptations:</strong> Local languages, education systems<br>
-    <strong>Focus:</strong> Rural Education, Gender Barriers
+    <h4>🎯 Topic Extraction</h4>
+    <strong>Topics:</strong> Automatic recognition of discussion themes<br>
+    <strong>Emotions:</strong> 6-emotion analysis (joy, anger, sadness, etc.)<br>
+    <strong>Search:</strong> Search for specific terms (e.g. "pride")
     </div>
     
     <div class="impact-card">
-    <h4>🇪🇺 Europe/North America</h4>
-    <strong>Application:</strong> Migrant/Refugee Education<br>
-    <strong>Target Group:</strong> Diaspora Communities<br>
-    <strong>Languages:</strong> German, English, French
+    <h4>📊 UNESCO Integration</h4>
+    <strong>Data:</strong> 196 countries education policy data<br>
+    <strong>Analysis:</strong> Gender gaps, policy comparison<br>
+    <strong>Visualization:</strong> Interactive dashboards
     </div>
     
     <div class="impact-card">
-    <h4>🇮🇳 South Asia</h4>
-    <strong>Scaling:</strong> India, Pakistan, Bangladesh<br>
-    <strong>Complexity:</strong> Multiple languages, caste system<br>
-    <strong>Potential:</strong> 500+ Million girls
+    <h4>🔄 Potential for Extension</h4>
+    <strong>More Languages:</strong> NLP pipeline expandable<br>
+    <strong>More Platforms:</strong> Facebook, Twitter possible<br>
+    <strong>Automation:</strong> Batch processing implementable
     </div>
     </div>
     </div>
@@ -414,12 +414,12 @@ if st.session_state.language == "DE":
     - **Constitutional Rights Assessment** - Education as Human Right
     - **Compulsory Education Analysis** mit Gender Parity Indicators
 
-    ### 📈 SDG 4 Indicators Development (Real-time Monitoring)
-    **Kontinuierliches Tracking** der zeitlichen Entwicklung wichtiger **SDG 4-Indikatoren weltweit**:
-    - **Multi-Country Rankings** und Regional Cluster Analysis
-    - **Peer-Country Comparisons** für ähnliche Entwicklungsstadien  
-    - **Progress Alerts** bei signifikanten Veränderungen
-    - **Predictive Analytics** für Policy Success Probability
+    ### 📈 SDG 4 Indicators Analysis (UNESCO Data)
+    **Statische Analyse** der **SDG 4-Indikatoren** basierend auf UNESCO-Daten:
+    - **Multi-Country Rankings** und Regional Comparisons
+    - **Peer-Country Analysis** für ähnliche Entwicklungsstadien  
+    - **Historical Trends** und Progress Tracking
+    - **Gap Analysis** für Policy Identification
 
     ### 🎬 YouTube Intelligence (Fokus: Bildungsdiskurse)
     **Spezialisierte Tools** zur Analyse bildungsbezogener **YouTube-Diskurse**:
@@ -436,13 +436,13 @@ if st.session_state.language == "DE":
     4. **Cross-Cultural Emotion Analysis** adapted to expression patterns
     5. **Specialized Analysis** für Education & Gender Topics mit lokalen Nuancen
 
-    ### 🌍 Global Discourse Analysis & Policy Intelligence
-    **Vergleichende Analyse** von Bildungsdiskursen zwischen **allen analysierten Ländern**:
-    - **Cross-Country Sentiment Benchmarking** mit kulturellen Insights
-    - **International Topic Trend Analysis** und Emerging Issues Detection
-    - **Evidence-based Insights** für Policy Development
-    - **Interactive Global Dashboards** für Multi-Stakeholder Access
-    - **Comprehensive Analysis Reports** nach UN/World Bank Standards
+    ### 🌍 Global Discourse Analysis (YouTube Comments)
+    **Vergleichende Analyse** von YouTube-Kommentaren zu Bildungsthemen:
+    - **Cross-Country Sentiment Comparison** (Deutsch/Englisch)
+    - **Topic Extraction** - welche Themen werden diskutiert?
+    - **Emotion Mapping** - wie fühlen Menschen über Bildungsthemen?
+    - **Keyword Search** - finde alle Kommentare zu spezifischen Begriffen (z.B. "Stolz")
+    - **Data Export** für weitere Analyse
     """)
 else:
     st.markdown("""
@@ -458,12 +458,12 @@ else:
     - **Constitutional Rights Assessment** - Education as Human Right
     - **Compulsory Education Analysis** with Gender Parity Indicators
 
-    ### 📈 SDG 4 Indicators Development (Real-time Monitoring)
-    **Continuous tracking** of temporal development of important **SDG 4 indicators worldwide**:
-    - **Multi-Country Rankings** and Regional Cluster Analysis
-    - **Peer-Country Comparisons** for similar development stages
-    - **Progress Alerts** for significant changes
-    - **Predictive Analytics** for Policy Success Probability
+    ### 📈 SDG 4 Indicators Analysis (UNESCO Data)
+    **Static analysis** of **SDG 4 indicators** based on UNESCO data:
+    - **Multi-Country Rankings** and Regional Comparisons
+    - **Peer-Country Analysis** for similar development stages
+    - **Historical Trends** and Progress Tracking
+    - **Gap Analysis** for Policy Identification
 
     ### 🎬 YouTube Intelligence (Focus: Educational Discourse)
     **Specialized tools** for analyzing education-related **YouTube discourse**:
@@ -480,13 +480,13 @@ else:
     4. **Cross-Cultural Emotion Analysis** adapted to expression patterns
     5. **Specialized Analysis** for Education & Gender Topics with local nuances
 
-    ### 🌍 Global Discourse Analysis & Policy Intelligence
-    **Comparative analysis** of educational discourse between **all analyzed countries**:
-    - **Cross-Country Sentiment Benchmarking** with cultural insights
-    - **International Topic Trend Analysis** and Emerging Issues Detection
-    - **Evidence-based Insights** for Policy Development
-    - **Interactive Global Dashboards** for Multi-Stakeholder Access
-    - **Comprehensive Analysis Reports** according to UN/World Bank Standards
+    ### 🌍 Global Discourse Analysis (YouTube Comments)
+    **Comparative analysis** of YouTube comments on educational topics:
+    - **Cross-Country Sentiment Comparison** (German/English)
+    - **Topic Extraction** - what themes are discussed?
+    - **Emotion Mapping** - how do people feel about educational topics?
+    - **Keyword Search** - find all comments on specific terms (e.g. "pride")
+    - **Data Export** for further analysis
     """)
 
 # ===== INFO-BOX =====

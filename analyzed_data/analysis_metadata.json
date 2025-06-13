@@ -1,0 +1,370 @@
+[
+  {
+    "filename": "20250529_142933_de_sentiment_emotion_topic_german_Wie_Künstliche_Intelligenz_die.csv",
+    "display_name": "29.05.2025 14:29 | 🇩🇪 Deutsch | 📺 Wie Künstliche Intelligenz die Bildung v... | 👤 ZDFheute Nachrichten",
+    "analysis_date": "2025-05-29T14:29:33.236768",
+    "language": "de",
+    "analysis_type": "sentiment_emotion_topic_german",
+    "total_comments": 2082,
+    "video_title": "Wie Künstliche Intelligenz die Bildung verändert | Markus Lanz vom 18. Juni 2024",
+    "channel_name": "ZDFheute Nachrichten",
+    "sentiment_summary": {
+      "negative": 1075,
+      "neutral": 914,
+      "positive": 93
+    },
+    "file_size_mb": 1.74
+  },
+  {
+    "filename": "20250529_144015_en_sentiment_emotion_topic_Why_Malaysia_Education_System.csv",
+    "display_name": "29.05.2025 14:40 | 🇺🇸 English | 📺 Why Malaysia Education System Is A Failu...",
+    "analysis_date": "2025-05-29T14:40:15.629048",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 1126,
+    "video_title": "Why Malaysia Education System Is A Failure?",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 558,
+      "neutral": 444,
+      "positive": 124
+    },
+    "file_size_mb": 0.98
+  },
+  {
+    "filename": "20250529_152431_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "29.05.2025 15:24 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-05-29T15:24:31.469577",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3449,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1895,
+      "neutral": 1100,
+      "positive": 454
+    },
+    "file_size_mb": 2.56
+  },
+  {
+    "filename": "20250530_073655_en_sentiment_emotion_topic_Education_For_All_Cameron_Al.csv",
+    "display_name": "30.05.2025 07:36 | 🇺🇸 English | 📺 Education For All | Cameron Allen | TEDx...",
+    "analysis_date": "2025-05-30T07:36:55.348952",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 83,
+    "video_title": "Education For All | Cameron Allen | TEDxKids@ElCajon",
+    "channel_name": null,
+    "sentiment_summary": {
+      "neutral": 41,
+      "positive": 28,
+      "negative": 14
+    },
+    "file_size_mb": 0.04
+  },
+  {
+    "filename": "20250530_084227_de_sentiment_emotion_topic_german_Corona_Verpasste_Chancen_der.csv",
+    "display_name": "30.05.2025 08:42 | 🇩🇪 Deutsch | 📺 Corona: Verpasste Chancen der Bildungspo... | 👤 ZDFheute Nachrichten",
+    "analysis_date": "2025-05-30T08:42:27.150933",
+    "language": "de",
+    "analysis_type": "sentiment_emotion_topic_german",
+    "total_comments": 334,
+    "video_title": "Corona: Verpasste Chancen der Bildungspolitik | Markus Lanz vom 29. Juni 2021",
+    "channel_name": "ZDFheute Nachrichten",
+    "sentiment_summary": {
+      "negative": 162,
+      "neutral": 153,
+      "positive": 19
+    },
+    "file_size_mb": 0.27
+  },
+  {
+    "filename": "20250530_084243_de_sentiment_emotion_topic_german_Corona_Verpasste_Chancen_der.csv",
+    "display_name": "30.05.2025 08:42 | 🇩🇪 Deutsch | 📺 Corona: Verpasste Chancen der Bildungspo... | 👤 ZDFheute Nachrichten",
+    "analysis_date": "2025-05-30T08:42:43.531476",
+    "language": "de",
+    "analysis_type": "sentiment_emotion_topic_german",
+    "total_comments": 334,
+    "video_title": "Corona: Verpasste Chancen der Bildungspolitik | Markus Lanz vom 29. Juni 2021",
+    "channel_name": "ZDFheute Nachrichten",
+    "sentiment_summary": {
+      "negative": 162,
+      "neutral": 153,
+      "positive": 19
+    },
+    "file_size_mb": 0.27
+  },
+  {
+    "filename": "20250530_084729_de_sentiment_emotion_topic_german_Corona_Verpasste_Chancen_der.csv",
+    "display_name": "30.05.2025 08:47 | 🇩🇪 Deutsch | 📺 Corona: Verpasste Chancen der Bildungspo... | 👤 ZDFheute Nachrichten",
+    "analysis_date": "2025-05-30T08:47:29.213282",
+    "language": "de",
+    "analysis_type": "sentiment_emotion_topic_german",
+    "total_comments": 334,
+    "video_title": "Corona: Verpasste Chancen der Bildungspolitik | Markus Lanz vom 29. Juni 2021",
+    "channel_name": "ZDFheute Nachrichten",
+    "sentiment_summary": {
+      "negative": 162,
+      "neutral": 153,
+      "positive": 19
+    },
+    "file_size_mb": 0.27
+  },
+  {
+    "filename": "20250530_085145_en_sentiment_emotion_topic_Education_For_All_Cameron_Al.csv",
+    "display_name": "30.05.2025 08:51 | 🇺🇸 English | 📺 Education For All | Cameron Allen | TEDx...",
+    "analysis_date": "2025-05-30T08:51:45.331449",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 87,
+    "video_title": "Education For All | Cameron Allen | TEDxKids@ElCajon",
+    "channel_name": null,
+    "sentiment_summary": {
+      "neutral": 43,
+      "positive": 29,
+      "negative": 15
+    },
+    "file_size_mb": 0.04
+  },
+  {
+    "filename": "20250530_093152_en_sentiment_emotion_topic_Why_Malaysia_Education_System.csv",
+    "display_name": "30.05.2025 09:31 | 🇺🇸 English | 📺 Why Malaysia Education System Is A Failu...",
+    "analysis_date": "2025-05-30T09:31:52.535839",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 1124,
+    "video_title": "Why Malaysia Education System Is A Failure?",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 557,
+      "neutral": 444,
+      "positive": 123
+    },
+    "file_size_mb": 0.97
+  },
+  {
+    "filename": "20250530_100042_en_sentiment_emotion_topic_Parents_Teachers_Students_D.csv",
+    "display_name": "30.05.2025 10:00 | 🇺🇸 English | 📺 Parents, Teachers & Students Debate the ...",
+    "analysis_date": "2025-05-30T10:00:42.480819",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 5361,
+    "video_title": "Parents, Teachers & Students Debate the US Education System | VICE Debates",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 2946,
+      "neutral": 1738,
+      "positive": 677
+    },
+    "file_size_mb": 4.65
+  },
+  {
+    "filename": "20250609_115755_en_sentiment_emotion_topic_Why_The_Education_System_Is_Fa.csv",
+    "display_name": "09.06.2025 11:57 | 🇺🇸 English | 📺 Why The Education System Is Failing Amer...",
+    "analysis_date": "2025-06-09T11:57:55.048716",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 218,
+    "video_title": "Why The Education System Is Failing America | CNBC Marathon",
+    "channel_name": null,
+    "sentiment_summary": {
+      "neutral": 192,
+      "negative": 24,
+      "positive": 2
+    },
+    "file_size_mb": 0.1
+  },
+  {
+    "filename": "20250609_120600_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "09.06.2025 12:06 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-06-09T12:06:00.330018",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3449,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1895,
+      "neutral": 1100,
+      "positive": 454
+    },
+    "file_size_mb": 2.56
+  },
+  {
+    "filename": "20250609_120618_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "09.06.2025 12:06 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-06-09T12:06:18.561624",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3449,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1895,
+      "neutral": 1100,
+      "positive": 454
+    },
+    "file_size_mb": 2.56
+  },
+  {
+    "filename": "20250609_121208_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "09.06.2025 12:12 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-06-09T12:12:08.934736",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3452,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1894,
+      "neutral": 1103,
+      "positive": 455
+    },
+    "file_size_mb": 2.56
+  },
+  {
+    "filename": "20250609_121522_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "09.06.2025 12:15 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-06-09T12:15:22.215010",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3452,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1894,
+      "neutral": 1103,
+      "positive": 455
+    },
+    "file_size_mb": 2.56
+  },
+  {
+    "filename": "20250609_122547_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "09.06.2025 12:25 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-06-09T12:25:47.461371",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3452,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1894,
+      "neutral": 1103,
+      "positive": 455
+    },
+    "file_size_mb": 2.56
+  },
+  {
+    "filename": "20250609_122718_de_sentiment_emotion_topic_german_Brisante_Diskussion_über_Bildu.csv",
+    "display_name": "09.06.2025 12:27 | 🇩🇪 Deutsch | 📺 Brisante Diskussion über Bildung und Mig... | 👤 DACH Medien",
+    "analysis_date": "2025-06-09T12:27:18.417557",
+    "language": "de",
+    "analysis_type": "sentiment_emotion_topic_german",
+    "total_comments": 63,
+    "video_title": "Brisante Diskussion über Bildung und Migration @ZDFheute #markuslanz",
+    "channel_name": "DACH Medien",
+    "sentiment_summary": {
+      "neutral": 32,
+      "negative": 28,
+      "positive": 3
+    },
+    "file_size_mb": 0.04
+  },
+  {
+    "filename": "20250609_123800_en_sentiment_emotion_topic_Brisante_Diskussion_über_Bildu.csv",
+    "display_name": "09.06.2025 12:38 | 🇺🇸 English | 📺 Brisante Diskussion über Bildung und Mig...",
+    "analysis_date": "2025-06-09T12:38:00.245911",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 63,
+    "video_title": "Brisante Diskussion über Bildung und Migration @ZDFheute #markuslanz",
+    "channel_name": null,
+    "sentiment_summary": {
+      "neutral": 32,
+      "negative": 28,
+      "positive": 3
+    },
+    "file_size_mb": 0.04
+  },
+  {
+    "filename": "20250609_123927_en_sentiment_emotion_topic_In_Finland_classes_in_recogni.csv",
+    "display_name": "09.06.2025 12:39 | 🇺🇸 English | 📺 In Finland, classes in recognizing fake ...",
+    "analysis_date": "2025-06-09T12:39:27.643928",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 147,
+    "video_title": "In Finland, classes in recognizing fake news, disinformation",
+    "channel_name": null,
+    "sentiment_summary": {
+      "neutral": 125,
+      "negative": 18,
+      "positive": 4
+    },
+    "file_size_mb": 0.07
+  },
+  {
+    "filename": "20250612_100240_de_sentiment_emotion_topic_german_Wie_Künstliche_Intelligenz_die.csv",
+    "display_name": "12.06.2025 10:02 | 🇩🇪 Deutsch | 📺 Wie Künstliche Intelligenz die Bildung v... | 👤 ZDFheute Nachrichten",
+    "analysis_date": "2025-06-12T10:02:40.393490",
+    "language": "de",
+    "analysis_type": "sentiment_emotion_topic_german",
+    "total_comments": 2082,
+    "video_title": "Wie Künstliche Intelligenz die Bildung verändert | Markus Lanz vom 18. Juni 2024",
+    "channel_name": "ZDFheute Nachrichten",
+    "sentiment_summary": {
+      "negative": 1075,
+      "neutral": 914,
+      "positive": 93
+    },
+    "file_size_mb": 1.74
+  },
+  {
+    "filename": "20250612_100702_en_sentiment_emotion_topic_Why_Malaysia_Education_System.csv",
+    "display_name": "12.06.2025 10:07 | 🇺🇸 English | 📺 Why Malaysia Education System Is A Failu...",
+    "analysis_date": "2025-06-12T10:07:02.161323",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 1123,
+    "video_title": "Why Malaysia Education System Is A Failure?",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 558,
+      "neutral": 442,
+      "positive": 123
+    },
+    "file_size_mb": 0.97
+  },
+  {
+    "filename": "20250612_101129_en_sentiment_emotion_topic_Why_The_Education_System_Is_Fa.csv",
+    "display_name": "12.06.2025 10:11 | 🇺🇸 English | 📺 Why The Education System Is Failing Amer...",
+    "analysis_date": "2025-06-12T10:11:29.233818",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 220,
+    "video_title": "Why The Education System Is Failing America | CNBC Marathon",
+    "channel_name": null,
+    "sentiment_summary": {
+      "neutral": 195,
+      "negative": 23,
+      "positive": 2
+    },
+    "file_size_mb": 0.1
+  },
+  {
+    "filename": "20250612_101702_en_sentiment_emotion_topic_What_women_in_Afghanistan_want.csv",
+    "display_name": "12.06.2025 10:17 | 🇺🇸 English | 📺 What women in Afghanistan want you to kn...",
+    "analysis_date": "2025-06-12T10:17:02.568657",
+    "language": "en",
+    "analysis_type": "sentiment_emotion_topic",
+    "total_comments": 3446,
+    "video_title": "What women in Afghanistan want you to know | Start Here",
+    "channel_name": null,
+    "sentiment_summary": {
+      "negative": 1893,
+      "neutral": 1101,
+      "positive": 452
+    },
+    "file_size_mb": 2.56
+  }
+]

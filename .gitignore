@@ -1,0 +1,12 @@
+# Virtual Environment
+venv/
+# Python Cache  
+__pycache__/
+*.pyc
+# ALL CSV files (dann explizit erwünschte hinzufügen)
+*.csv
+# Large results
+saved_results/
+saved_results_english/
+# System files
+.DS_Store

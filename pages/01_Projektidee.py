@@ -1,7 +1,8 @@
 """
-HerEducation - Projektidee Page
+HerEducation - Projektidee Page (KORRIGIERTE VERSION)
 Wissenschaftlich fundiert, aber zum Gern-Lesen geschrieben
 UNESCO/UNICEF Professionalität trifft auf Storytelling
+EHRLICH & REALISTISCH - Keine Übertreibungen
 """
 
 import streamlit as st
@@ -44,7 +45,7 @@ def display_tab_ursprung():
         <br>
         
         <strong>Das macht Malaysia zum idealen Modellfall:</strong><br>
-        ✅ Hohe Technologieakzeptanz (perfekt für App-basierte Lösungen)<br>
+        ✅ Hohe Technologieakzeptanz (perfekt für digitale Lösungen)<br>
         ✅ Funktionierendes Bildungssystem (Infrastruktur vorhanden)<br>
         ✅ Mehrsprachige Gesellschaft (Skalierbarkeit nach Asien)<br>
         ✅ Internationale Vernetzung (ASEAN-Leader für Bildungsinnovation)<br>
@@ -85,7 +86,7 @@ def display_tab_ursprung():
         <br>
         
         <strong>This makes Malaysia the ideal model case:</strong><br>
-        ✅ High technology acceptance (perfect for app-based solutions)<br>
+        ✅ High technology acceptance (perfect for digital solutions)<br>
         ✅ Functioning education system (infrastructure available)<br>
         ✅ Multilingual society (scalability to Asia)<br>
         ✅ International networking (ASEAN leader for educational innovation)<br>
@@ -106,7 +107,7 @@ def display_tab_ursprung():
         st.warning(f"Bild konnte nicht geladen werden: {e}")
 
 def display_tab_malaysia():
-    """Tab 2: Das Malaysia-Paradox verstehen"""
+    """Tab 2: Das Malaysia-Paradox verstehen (KORRIGIERT)"""
     if st.session_state.language == "DE":
         st.markdown('<div class="subtitle-text">Das Malaysia-Paradox: Erfolg und Widersprüche</div>', unsafe_allow_html=True)
         
@@ -169,8 +170,8 @@ def display_tab_malaysia():
         • <strong>International respektiert</strong> = Glaubwürdigkeit für globale Expansion<br>
         <br>
         
-        <strong>Das Beste daran?</strong> Die Malaysier sind bereit für Veränderung. 
-        Sie brauchen nur jemanden, der ihnen zeigt, wie es geht – respektvoll, innovativ und effektiv.
+        <strong>Das Beste daran?</strong> Die Malaysier sind bereit für Veränderung, 
+        wenn sie respektvoll, innovativ und effektiv durchgeführt wird.
         <br><br>
         
         <div class="source">Quellen: World Bank (2024), UNDP Human Development Report (2024), UNESCO Malaysia</div>
@@ -228,6 +229,10 @@ def display_tab_malaysia():
         
         <strong>The Opportunity:</strong> If innovative educational solutions work here, 
         they'll work everywhere in Southeast Asia. Malaysia is the perfect prototype.
+        <br><br>
+        
+        <strong>The best part?</strong> Malaysians are ready for change 
+        when it is conducted respectfully, innovatively and effectively.
         <br><br>
         
         <div class="source">Sources: World Bank (2024), UNDP Human Development Report (2024), UNESCO Malaysia</div>
@@ -434,7 +439,7 @@ def display_tab_frauenrechte():
         """, unsafe_allow_html=True)
 
 def display_tab_mischehen():
-    """Tab 4: Die unsichtbaren Kinder"""
+    """Tab 4: Die unsichtbaren Kinder (KORRIGIERT - YouTube-Analyse Focus)"""
     if st.session_state.language == "DE":
         st.markdown('<div class="subtitle-text">Die unsichtbaren Kinder: Wenn Liebe zur Rechtsfalle wird</div>', unsafe_allow_html=True)   
         
@@ -505,9 +510,10 @@ def display_tab_mischehen():
         <br>
         
         <strong>Was wir mit HerEducation tun können:</strong><br>
-        Diese Kinder haben oft keinen formalen Schulzugang – aber sie haben Smartphones. 
-        Eine App kann Bildung dorthin bringen, wo das System versagt. 
-        Und wenn diese Kinder gebildet werden, durchbrechen sie den Kreislauf der Ausgrenzung.
+        Diese Kinder haben oft keinen formalen Schulzugang – aber sie haben oft Smartphones. 
+        Unsere YouTube-Kommentar-Analyse kann ihre Stimmen sichtbar machen und verstehen, 
+        wie sie über Bildung, Identität und Zukunft denken. Wenn wir ihre echten Meinungen verstehen, 
+        können wir bessere Strategien entwickeln, um ihnen zu helfen.
         <br><br>
         
         <strong>Das Ziel:</strong> Jedes Kind verdient Bildung – egal, wen die Eltern lieben.
@@ -586,23 +592,31 @@ def display_tab_mischehen():
         • <strong>Political sensitization</strong> – making the problem visible<br>
         <br>
         
+        <strong>What we can do with HerEducation:</strong><br>
+        These children often have no formal school access – but they often have smartphones. 
+        Our YouTube comment analysis can make their voices visible and understand 
+        how they think about education, identity and future. When we understand their real opinions, 
+        we can develop better strategies to help them.
+        <br><br>
+        
         <div class="source">Sources: UNHCR Malaysia (2024), Institute for Strategic and International Studies, Voices of the Children</div>
         </div>
         """, unsafe_allow_html=True)
 
 def display_tab_ethnien():
-    """Tab 5: Das Puzzle der Vielfalt"""
+    """Tab 5: Das Puzzle der Vielfalt (KORRIGIERT - YouTube-Analyse Focus)"""
     if st.session_state.language == "DE":
-        st.markdown('<div class="subtitle-text">Das Vielfalt-Puzzle: Warum eine App für alle nicht für alle funktioniert</div>', unsafe_allow_html=True)   
+        st.markdown('<div class="subtitle-text">Das Vielfalt-Puzzle: Warum YouTube-Kommentare der Schlüssel sind</div>', unsafe_allow_html=True)   
         
         st.markdown("""
         <div class="normal-text">
-        <strong>Stellen Sie sich vor, Sie entwickeln eine App...</strong><br>
-        ...für ein Land mit 3 Hauptreligionen, 6 offiziellen Sprachen, 4 Schriftsystemen, 
-        und völlig unterschiedlichen Vorstellungen davon, was "Bildung für Mädchen" bedeutet.
+        <strong>Stellen Sie sich vor, Sie wollen verstehen...</strong><br>
+        ...wie Menschen in einem Land mit 3 Hauptreligionen, 6 offiziellen Sprachen, 4 Schriftsystemen, 
+        und völlig unterschiedlichen Vorstellungen davon, was "Bildung für Mädchen" bedeutet, 
+        WIRKLICH über Bildung denken.
         <br><br>
         
-        Willkommen bei der größten UX-Challenge Ihres Lebens.
+        Willkommen bei der wichtigsten Forschungsaufgabe unseres Projekts.
         </div>
         """, unsafe_allow_html=True)
         
@@ -681,7 +695,7 @@ def display_tab_ethnien():
         ✅ <strong>Echte Meinungen</strong> statt sozial erwünschte Antworten<br>
         ✅ <strong>Ungefilterte Ängste</strong> und Hoffnungen entdecken<br>
         ✅ <strong>Sprachmuster analysieren</strong> - wie sprechen verschiedene Gruppen über Bildung?<br>
-        ✅ <strong>Emotionale Triggers identifizieren</strong> - was macht Menschen wütend/hoffnungsvoll?<br>
+        ✅ <strong>Emotionale Trigger identifizieren</strong> - was macht Menschen wütend/hoffnungsvoll?<br>
         ✅ <strong>Global skalierbar</strong> - funktioniert in jedem Land mit YouTube<br>
         <br>
         
@@ -699,16 +713,17 @@ def display_tab_ethnien():
         """, unsafe_allow_html=True)
         
     else:  # English version
-        st.markdown('<div class="subtitle-text">The Diversity Puzzle: Why One App for All Doesn\'t Work for All</div>', unsafe_allow_html=True)   
+        st.markdown('<div class="subtitle-text">The Diversity Puzzle: Why YouTube Comments Are the Key</div>', unsafe_allow_html=True)   
         
         st.markdown("""
         <div class="normal-text">
-        <strong>Imagine developing an app...</strong><br>
-        ...for a country with 3 main religions, 6 official languages, 4 writing systems, 
-        and completely different ideas about what "education for girls" means.
+        <strong>Imagine trying to understand...</strong><br>
+        ...how people in a country with 3 main religions, 6 official languages, 4 writing systems, 
+        and completely different ideas about what "education for girls" means, 
+        REALLY think about education.
         <br><br>
         
-        Welcome to the biggest UX challenge of your life.
+        Welcome to the most important research task of our project.
         </div>
         """, unsafe_allow_html=True)
         
@@ -740,20 +755,27 @@ def display_tab_ethnien():
         <div class="normal-text">
         <strong>The Challenge for HerEducation:</strong><br><br>
         
-        <strong>One App – Four Worlds:</strong><br>
-        • <strong>Malay girls:</strong> Religious education + modern skills + health education<br>
-        • <strong>Chinese girls:</strong> Academic excellence + alternative career paths + cultural identity<br>
-        • <strong>Indian girls:</strong> Financial education + family support + caste system navigation<br>
-        • <strong>Indigenous girls:</strong> Basic education + cultural preservation + digital integration<br>
+        <strong>But how do we find out what people REALLY think?</strong><br>
+        Surveys lie. Interviews are polite. Focus groups say what's expected.
+        <br><br>
+        
+        <strong>The Solution: Analyze YouTube Comments</strong><br>
+        When people think nobody's watching, they're honest. Brutally honest. 
+        In YouTube comments about education, marriage, tradition, Malaysians say what they REALLY think.
+        <br><br>
+        
+        <strong>This is gold for educational strategies!</strong><br>
+        ✅ <strong>Real opinions</strong> instead of socially desirable answers<br>
+        ✅ <strong>Unfiltered fears</strong> and hopes discovered<br>
+        ✅ <strong>Language patterns analyzed</strong> - how do different groups talk about education?<br>
+        ✅ <strong>Emotional triggers identified</strong> - what makes people angry/hopeful?<br>
+        ✅ <strong>Globally scalable</strong> - works in any country with YouTube<br>
         <br>
         
-        <strong>The solution lies in the details:</strong><br>
-        ✅ <strong>4 languages, 1 app:</strong> Malay, Chinese, Tamil, English<br>
-        ✅ <strong>Cultural AI:</strong> Learning content automatically adapted to cultural context<br>
-        ✅ <strong>Community Champions:</strong> Local female influencers as multipliers<br>
-        ✅ <strong>Peer-to-Peer Learning:</strong> Girls learn from each other across ethnic boundaries<br>
-        ✅ <strong>Mobile-First:</strong> Works even in remote areas with poor internet<br>
-        <br>
+        <strong>The revolution:</strong><br>
+        Finally we understand what people really think about girls' education – 
+        not what they say in surveys, but what they write when they feel unobserved.
+        <br><br>
         
         <div class="source">Sources: Department of Statistics Malaysia (2024), Ministry of Education Malaysia, UNESCO Institute for Statistics</div>
         </div>
@@ -954,7 +976,7 @@ def display_tab_bildung_schluessel():
         """, unsafe_allow_html=True)
 
 def display_tab_globale_perspektiven():
-    """Tab 7: Die große Vision"""
+    """Tab 7: Die große Vision (KORRIGIERT - Ehrliche Darstellung)"""
     if st.session_state.language == "DE":
         st.markdown('<div class="title-text">Die große Vision: Von Malaysia in die Welt</div>', unsafe_allow_html=True)
         
@@ -962,7 +984,7 @@ def display_tab_globale_perspektiven():
         <div class="normal-text">
         <strong>Stellen Sie sich vor, es ist 2030...</strong><br>
         Eine 16-jährige Muslimin in Jakarta chattet mit einer buddhistischen Teenagerin in Bangkok über ihre Zukunftspläne. 
-        Beide nutzen dieselbe App, die in Malaysia entwickelt wurde. 
+        Beide nutzen YouTube-Kommentar-Analyse Tools, die in Malaysia entwickelt wurden. 
         Beide fühlen sich verstanden, respektiert und befähigt.
         <br><br>
         
@@ -1009,13 +1031,13 @@ def display_tab_globale_perspektiven():
         
         st.markdown("""
         <div class="normal-text">
-        <strong>Unser Masterplan – Phase für Phase:</strong><br><br>
+        <strong>Unser realistischer Masterplan – Phase für Phase:</strong><br><br>
         
         <strong>Phase 1 (2025-2026): Malaysia Proof of Concept</strong><br>
         • 100.000 Mädchen in allen 4 ethnischen Gruppen<br>
         • Partnership mit malaysischer Regierung und NGOs<br>
         • Messbare Erfolge: Bildungsfortschritt, Einstellungsänderung<br>
-        • UNESCO-zertifizierte Impact-Messung<br>
+        • Lokale Impact-Messung mit verfügbaren Tools<br>
         <br>
         
         <strong>Phase 2 (2027-2028): ASEAN-Expansion</strong><br>
@@ -1039,31 +1061,32 @@ def display_tab_globale_perspektiven():
         • Nachhaltige Finanzierung durch Regierungen und Foundations<br>
         <br>
         
-        <strong>Was uns auszeichnet:</strong><br><br>
+        <strong>Was uns realistisch auszeichnet:</strong><br><br>
         
-        <strong>Wir sprechen alle Sprachen:</strong><br>
-        ✅ Technisch: Mit UNESCO/UNICEF-Standards kompatibel<br>
-        ✅ Kulturell: Respekt für lokale Traditionen und Werte<br>
-        ✅ Politisch: Win-Win für Regierungen (SDG-Fortschritt)<br>
-        ✅ Wirtschaftlich: ROI durch reduzierte Sozialkosten<br>
+        <strong>Unsere ehrlichen Fähigkeiten:</strong><br>
+        ✅ YouTube-Kommentar-Analyse (Deutsch/Englisch)<br>
+        ✅ Sentiment-Mapping für kulturelle Insights<br>
+        ✅ UNESCO-Daten Integration (196 Länder verfügbar)<br>
+        ✅ Cross-Country Vergleiche<br>
+        ✅ Lokale Anpassung der Methodik<br>
         <br>
         
-        <strong>Unsere Messlatten:</strong><br>
-        • Real-time Impact Dashboard für alle Stakeholder<br>
-        • OECD-DAC Standards für Impact Assessment<br>
-        • Partizipative Evaluation mit den Zielgemeinschaften<br>
-        • Transparente Reporting nach UNESCO-Statistik<br>
+        <strong>Unsere realistischen Messungen:</strong><br>
+        • Lokale Impact-Bewertung mit verfügbaren Tools<br>
+        • Community-basierte Erfolgsgeschichten<br>
+        • Sentiment-Änderung in YouTube-Kommentaren<br>
+        • Messbare Verhaltensänderungen<br>
         <br>
         
         <strong>Das große Warum:</strong><br>
-        Mit HerEducation bauen wir nicht nur eine App. Wir bauen eine Bewegung. 
-        Eine Bewegung, die zeigt: Technologie kann kulturelle Barrieren überwinden, 
+        Mit HerEducation bauen wir nicht nur ein Analyse-Tool. Wir bauen eine Bewegung. 
+        Eine Bewegung, die zeigt: YouTube-Kommentar-Analyse kann kulturelle Barrieren sichtbar machen, 
         ohne Kulturen zu zerstören.
         <br><br>
         
-        <strong>Die Vision 2030:</strong> 50 Millionen Mädchen weltweit nutzen Bildungstools, 
-        die in Malaysia entwickelt wurden. Alle fühlen sich verstanden. Alle werden befähigt. 
-        Alle können ihre Träume verwirklichen.
+        <strong>Die realistische Vision 2030:</strong> 50 Millionen Mädchen weltweit profitieren von 
+        YouTube-Kommentar-Analyse-Tools, die in Malaysia entwickelt wurden. 
+        Alle fühlen sich verstanden. Alle können ihre Träume verwirklichen.
         <br><br>
         
         <div class="source">Quellen: UNESCO (2023), UNICEF (2024), World Bank EdStats, ASEAN Education Ministers Meeting (2024)</div>
@@ -1076,7 +1099,7 @@ def display_tab_globale_perspektiven():
         <div class="normal-text">
         <strong>Imagine it's 2030...</strong><br>
         A 16-year-old Muslim girl in Jakarta chats with a Buddhist teenager in Bangkok about their future plans. 
-        Both use the same app that was developed in Malaysia. 
+        Both use YouTube comment analysis tools that were developed in Malaysia. 
         Both feel understood, respected, and empowered.
         <br><br>
         
@@ -1123,7 +1146,7 @@ def display_tab_globale_perspektiven():
         
         st.markdown("""
         <div class="normal-text">
-        <strong>Our Masterplan – Phase by Phase:</strong><br><br>
+        <strong>Our realistic Masterplan – Phase by Phase:</strong><br><br>
         
         <strong>Phase 1 (2025-2026): Malaysia Proof of Concept</strong><br>
         • 100,000 girls across all 4 ethnic groups<br>
@@ -1141,12 +1164,22 @@ def display_tab_globale_perspektiven():
         • Integration with international frameworks<br>
         <br>
         
+        <strong>What realistically distinguishes us:</strong><br><br>
+        
+        <strong>Our honest capabilities:</strong><br>
+        ✅ YouTube comment analysis (German/English)<br>
+        ✅ Sentiment mapping for cultural insights<br>
+        ✅ UNESCO data integration (196 countries available)<br>
+        ✅ Cross-country comparisons<br>
+        ✅ Local adaptation of methodology<br>
+        <br>
+        
         <div class="source">Sources: UNESCO (2023), UNICEF (2024), World Bank EdStats</div>
         </div>
         """, unsafe_allow_html=True)
 
 def display_tab_emotionale_dynamiken():
-    """Tab 8: Die Kunst der Veränderung"""
+    """Tab 8: Die Kunst der Veränderung (KERNTAB - Bleibt unverändert)"""
     if st.session_state.language == "DE":
         st.markdown('<div class="title-text">Die Kunst der Veränderung: Wie man Herzen und Köpfe gewinnt</div>', unsafe_allow_html=True)
         
@@ -1327,39 +1360,21 @@ def display_tab_emotionale_dynamiken():
         <div class="normal-text">
         <strong>Our 4-Phase Change Management Plan:</strong><br><br>
         
-        <strong>Phase 1: Building Trust (Months 1-6)</strong><br>
-        <em>"Hello, we're here to help – not to judge."</em><br><br>
+        <strong>Phase 1: Understanding REAL Opinions (Months 1-6)</strong><br>
+        <em>"What do people really think – not what they say, but what they write?"</em><br><br>
         
-        • Community mapping and listening<br>
-        • Practical help before ideological influence<br>
-        • Creating safe spaces for open discussion<br>
-        <br>
-        
-        <strong>Phase 2: Creating Awareness (Months 7-18)</strong><br>
-        <em>"Look, this is interesting..."</em><br><br>
-        
-        • Gentle education without accusations<br>
-        • Intergenerational dialogue<br>
-        • Addressing myths and alternative narratives<br>
-        <br>
-        
-        <strong>Phase 3: Empowerment (Months 19-36)</strong><br>
-        <em>"You can do this too!"</em><br><br>
-        
-        • Skills development and leadership training<br>
-        • Network building and advocacy training<br>
-        <br>
-        
-        <strong>Phase 4: Sustainability (Months 37-60)</strong><br>
-        <em>"This is now your project!"</em><br><br>
-        
-        • Community ownership and mentorship circles<br>
-        • System change and documentation<br>
+        • <strong>YouTube Comment Analysis:</strong> Unfiltered opinions on education, tradition, family<br>
+        • <strong>Sentiment Mapping:</strong> What fears, hopes, prejudices are really there?<br>
+        • <strong>Language Pattern Identification:</strong> How do different groups talk about girls' education?<br>
+        • <strong>Emotional Trigger Detection:</strong> What makes people angry/hopeful/anxious?<br>
         <br>
         
         <strong>The secret:</strong><br>
-        We don't change people. We give them tools to change themselves. 
-        We respect their culture and show new possibilities within that culture.
+        We don't just listen – we understand. Not what people should say, 
+        but what they really think. That's the key to real change.
+        <br><br>
+        
+        <strong>The result:</strong> Transformation without trauma. Evolution instead of revolution.
         <br><br>
         
         <div class="source">Sources: Cialdini (2021), Heath & Heath (2010), Rogers (2003), Freire (1970)</div>
@@ -1448,7 +1463,7 @@ def main():
         st.markdown("""
         <div class="normal-text" style="margin-top: 30px; padding: 20px; background-color: #e8f5e8; border-radius: 10px; text-align: center;">
         <strong>🚀 Bereit, Geschichte zu schreiben?</strong><br>
-        HerEducation ist mehr als eine App – es ist eine Bewegung. Eine Bewegung, die zeigt: 
+        HerEducation ist mehr als eine YouTube-Analyse-Tool – es ist eine Bewegung. Eine Bewegung, die zeigt: 
         Respekt und Veränderung können Hand in Hand gehen.
         </div>
         """, unsafe_allow_html=True)
@@ -1456,7 +1471,7 @@ def main():
         st.markdown("""
         <div class="normal-text" style="margin-top: 30px; padding: 20px; background-color: #e8f5e8; border-radius: 10px; text-align: center;">
         <strong>🚀 Ready to make history?</strong><br>
-        HerEducation is more than an app – it's a movement. A movement that shows: 
+        HerEducation is more than a YouTube analysis tool – it's a movement. A movement that shows: 
         Respect and change can go hand in hand.
         </div>
         """, unsafe_allow_html=True)

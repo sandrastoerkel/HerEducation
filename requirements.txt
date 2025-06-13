@@ -23,3 +23,4 @@ youtube-comment-downloader>=0.1.70
 
 # Optional: SpaCy (without German model for now)
 spacy>=3.6.0
+yt-dlp>=2023.7.6

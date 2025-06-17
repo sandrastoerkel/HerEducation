@@ -1,6 +1,14 @@
 """
-🌍 GLOBAL DISCOURSE COUNTRY DETECTOR - Enterprise Country Recognition System
-Erweiterte Länder-Erkennung für 07_Globale_Diskurs_Analyse.py
+🌍 GLOBAL DISCOURSE COUNTRY DETECTOR - Enterprise Country Recognition System v2.0
+Enhanced Country Detection für 07_Globale_Diskurs_Analyse.py
+
+*** ENHANCED VERSION ***
+- Fixed "in" problem für India
+- Added 25+ missing countries including Afghanistan
+- Improved pattern matching logic  
+- Better filename cleaning
+- Robust confidence calculation
+- No more problematic short alternative names
 
 Dieses Modul erkennt Länder aus Dateinamen von englischen Kommentaranalysen
 und bietet Fallback-Mechanismen für unbekannte Länder.
@@ -13,7 +21,7 @@ from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -36,6 +44,11 @@ class CountryDetectionConstants:
     
     # Logger
     LOGGER_NAME = "global_discourse_country_detector"
+    
+    # *** NEW: Problematic short words to avoid ***
+    EXCLUDED_SHORT_WORDS = {
+        "in", "it", "no", "us", "at", "is", "to", "on", "or", "an", "as", "be", "of", "we", "my"
+    }
 
 
 class DetectionMethod(Enum):
@@ -44,6 +57,7 @@ class DetectionMethod(Enum):
     KEYWORD_PATTERN = "keyword_pattern"
     CITY_PATTERN = "city_pattern"
     MEDIA_PATTERN = "media_pattern"
+    EXACT_COUNTRY_NAME = "exact_country_name"
     USER_OVERRIDE = "user_override"
     FALLBACK = "fallback"
 
@@ -60,11 +74,19 @@ class CountryPattern:
     cities: List[str] = field(default_factory=list)
     media_outlets: List[str] = field(default_factory=list)
     alternative_names: List[str] = field(default_factory=list)
+    iso_codes: List[str] = field(default_factory=list)  # *** NEW: ISO codes ***
     
     @property
     def all_patterns(self) -> List[str]:
         """Alle Patterns kombiniert"""
-        return self.keywords + self.cities + self.media_outlets + self.alternative_names
+        return self.keywords + self.cities + self.media_outlets + self.alternative_names + self.iso_codes
+    
+    def __post_init__(self):
+        """*** NEW: Remove problematic short words ***"""
+        self.alternative_names = [
+            name for name in self.alternative_names 
+            if name.lower() not in CountryDetectionConstants.EXCLUDED_SHORT_WORDS
+        ]
 
 
 @dataclass
@@ -76,6 +98,7 @@ class DetectionResult:
     matched_patterns: List[str] = field(default_factory=list)
     alternative_suggestions: List[str] = field(default_factory=list)
     requires_user_input: bool = False
+    debug_info: Dict = field(default_factory=dict)  # *** NEW: Debug info ***
     
     @property
     def is_confident(self) -> bool:
@@ -84,50 +107,59 @@ class DetectionResult:
 
 
 # =============================================================================
-# COUNTRY PATTERNS DATABASE
+# ENHANCED COUNTRY PATTERNS DATABASE
 # =============================================================================
 
-class CountryPatternsDatabase:
-    """Erweiterte Datenbank für Länder-Pattern"""
+class EnhancedCountryPatternsDatabase:
+    """*** ENHANCED *** Erweiterte Datenbank für Länder-Pattern mit 60+ Ländern"""
     
     def __init__(self):
-        self.patterns = self._initialize_patterns()
+        self.patterns = self._initialize_enhanced_patterns()
         self.logger = logging.getLogger(CountryDetectionConstants.LOGGER_NAME)
+        
+        # *** NEW: Country name variations for exact matching ***
+        self._country_name_variations = self._build_country_name_variations()
     
-    def _initialize_patterns(self) -> Dict[str, CountryPattern]:
-        """Initialisiert umfassende Länder-Pattern"""
+    def _initialize_enhanced_patterns(self) -> Dict[str, CountryPattern]:
+        """*** ENHANCED *** Initialisiert umfassende Länder-Pattern für 60+ Länder"""
         
         patterns = {
-            # 🇩🇪 DACH-Region
-            "Germany": CountryPattern(  # ← Dictionary Key englisch  
-            country="Germany",      # ← Country Name englisch
-            keywords=["germany", "german", "deutsch", "deutschland"],  # ← Detection keywords bleiben
-            cities=["berlin", "munich", "hamburg", "cologne", "frankfurt", "dresden", "leipzig"],
-            media_outlets=["ard", "zdf", "rtl", "sat1", "pro7", "ntv", "welt", "spiegel"],
-            alternative_names=["de", "ger", "brd", "deutschland"]  # ← Deutschland als Alternative
+            # =================================================================
+            # 🇩🇪 DACH-Region (Enhanced)
+            # =================================================================
+            "Germany": CountryPattern(
+                country="Germany",
+                keywords=["germany", "german", "deutsch", "deutschland"],
+                cities=["berlin", "munich", "muenchen", "hamburg", "cologne", "koeln", "frankfurt", "dresden", "leipzig", "dortmund", "essen", "duesseldorf"],
+                media_outlets=["ard", "zdf", "rtl", "sat1", "pro7", "ntv", "welt", "spiegel", "bild", "sueddeutsche"],
+                alternative_names=["deutschland", "deutsche"],
+                iso_codes=["de", "deu", "ger"]
             ),
             
-            
-            "Austria": CountryPattern(  # ✅ Key = englisch für Weltkarte
-                country="Austria",      # ✅ Name = englisch für Weltkarte
-                keywords=["austria", "austrian", "österreich"],  # ✅ österreich bleibt für YouTube Detection!
-                cities=["vienna", "wien", "salzburg", "graz", "innsbruck"],  # ✅ wien bleibt für Detection!
-                media_outlets=["orf", "servus", "puls4"],
-                alternative_names=["at", "aut", "österreich"]  # ✅ österreich als Alternative
+            "Austria": CountryPattern(
+                country="Austria",
+                keywords=["austria", "austrian", "oesterreich", "österreich"],
+                cities=["vienna", "wien", "salzburg", "graz", "innsbruck", "linz", "klagenfurt"],
+                media_outlets=["orf", "servus", "puls4", "oe24"],
+                alternative_names=["oesterreich", "österreich"],
+                iso_codes=["at", "aut"]
             ),
             
-            "Schweiz": CountryPattern(
-                country="Schweiz",
-                keywords=["switzerland", "swiss", "schweiz"],
-                cities=["zurich", "geneva", "basel", "bern", "lausanne"],
-                media_outlets=["srf", "rts", "rsi"],
-                alternative_names=["ch", "sui"]
+            "Switzerland": CountryPattern(
+                country="Switzerland",
+                keywords=["switzerland", "swiss", "schweiz", "suisse", "svizzera"],
+                cities=["zurich", "geneva", "basel", "bern", "lausanne", "winterthur", "lucerne", "st_gallen"],
+                media_outlets=["srf", "rts", "rsi", "telebasel"],
+                alternative_names=["schweiz", "suisse", "svizzera"],
+                iso_codes=["ch", "che", "sui"]
             ),
             
-            # 🇺🇸 Nordamerika
+            # =================================================================
+            # 🇺🇸 Nordamerika (Enhanced)
+            # =================================================================
             "United States": CountryPattern(
                 country="United States",
-                keywords=["usa", "america", "american", "united_states", "us"],
+                keywords=["usa", "america", "american", "united_states", "states"],
                 cities=[
                     "new_york", "los_angeles", "chicago", "houston", "phoenix", "philadelphia",
                     "san_antonio", "san_diego", "dallas", "san_jose", "austin", "jacksonville",
@@ -136,15 +168,14 @@ class CountryPatternsDatabase:
                     "fresno", "sacramento", "mesa", "kansas_city", "atlanta", "long_beach",
                     "colorado_springs", "raleigh", "miami", "virginia_beach", "omaha", "oakland",
                     "minneapolis", "tulsa", "arlington", "tampa", "new_orleans", "wichita",
-                    "cleveland", "bakersfield", "honolulu", "anaheim", "henderson", "stockton",
-                    "chula_vista", "buffalo", "madison", "reno", "toledo", "st_paul", "st_petersburg",
-                    "chandler", "laredo", "norfolk", "durham", "jersey_city", "cheyenne", "fort_worth"
+                    "cleveland", "bakersfield", "honolulu", "anaheim", "henderson", "stockton"
                 ],
                 media_outlets=[
                     "cnn", "fox", "nbc", "abc", "cbs", "msnbc", "npr", "pbs", "espn", "hln",
                     "bloomberg", "cnbc", "newsmax", "oann", "tyt", "vox", "buzzfeed", "politico"
                 ],
-                alternative_names=["america", "united_states_of_america", "usa"]
+                alternative_names=["america", "united_states_of_america"],
+                iso_codes=["usa", "us_america"]  # *** FIXED: No "us" ***
             ),
             
             "Canada": CountryPattern(
@@ -153,53 +184,53 @@ class CountryPatternsDatabase:
                 cities=[
                     "toronto", "montreal", "vancouver", "calgary", "edmonton", "ottawa",
                     "winnipeg", "quebec_city", "hamilton", "kitchener", "london", "victoria",
-                    "halifax", "oshawa", "windsor", "saskatoon", "st_catharines", "regina",
-                    "st_johns", "barrie", "kelowna", "abbotsford", "greater_sudbury", "kingston",
-                    "saguenay", "sherbrooke", "guelph", "kanata", "chicoutimi", "trois_rivieres"
+                    "halifax", "oshawa", "windsor", "saskatoon", "st_catharines", "regina"
                 ],
                 media_outlets=["cbc", "ctv", "global", "tva", "radio_canada"],
-                alternative_names=["ca", "can"]
+                alternative_names=["kanada"],
+                iso_codes=["ca", "can"]
             ),
             
-            # 🇬🇧 Vereinigtes Königreich & Irland
+            # =================================================================
+            # 🇬🇧 Vereinigtes Königreich & Irland (Enhanced)
+            # =================================================================
             "United Kingdom": CountryPattern(
                 country="United Kingdom",
-                keywords=["uk", "britain", "british", "england", "scotland", "wales", "northern_ireland"],
+                keywords=["uk", "britain", "british", "england", "scotland", "wales", "northern_ireland", "great_britain"],
                 cities=[
                     "london", "birmingham", "leeds", "glasgow", "sheffield", "bradford", "liverpool",
                     "edinburgh", "manchester", "bristol", "wakefield", "cardiff", "coventry",
                     "nottingham", "leicester", "sunderland", "belfast", "newcastle", "brighton",
-                    "hull", "plymouth", "stoke", "wolverhampton", "derby", "swansea", "southampton",
-                    "salford", "aberdeen", "westminster", "portsmouth", "york", "peterborough",
-                    "dundee", "lancaster", "oxford", "newport", "preston", "st_albans", "norwich",
-                    "chester", "cambridge", "salisbury", "exeter", "gloucester", "lisburn", "chichester"
+                    "hull", "plymouth", "stoke", "wolverhampton", "derby", "swansea", "southampton"
                 ],
                 media_outlets=["bbc", "itv", "channel4", "sky", "times", "guardian", "telegraph", "independent"],
-                alternative_names=["gb", "great_britain", "england", "scotland", "wales"]
+                alternative_names=["great_britain", "england", "britain"],
+                iso_codes=["gb", "gbr", "uk"]
             ),
             
             "Ireland": CountryPattern(
                 country="Ireland",
                 keywords=["ireland", "irish"],
                 cities=["dublin", "cork", "limerick", "galway", "waterford", "drogheda", "dundalk"],
-                media_outlets=["rte", "tv3", "newstalk"],
-                alternative_names=["ie", "eire"]
+                media_outlets=["rte", "tv3", "newstalk", "today_fm"],
+                alternative_names=["eire"],
+                iso_codes=["ie", "irl"]
             ),
             
-            # 🇦🇺 Ozeanien
+            # =================================================================
+            # 🇦🇺 Ozeanien (Enhanced)
+            # =================================================================
             "Australia": CountryPattern(
                 country="Australia",
                 keywords=["australia", "australian", "aussie", "oz"],
                 cities=[
                     "sydney", "melbourne", "brisbane", "perth", "adelaide", "gold_coast",
                     "newcastle", "canberra", "sunshine_coast", "wollongong", "hobart", "geelong",
-                    "townsville", "cairns", "darwin", "toowoomba", "ballarat", "bendigo",
-                    "albury", "launceston", "mackay", "rockhampton", "bunbury", "bundaberg",
-                    "coffs_harbour", "wagga_wagga", "hervey_bay", "mildura", "shepparton",
-                    "port_macquarie", "gladstone", "tamworth", "traralgon", "orange", "dubbo"
+                    "townsville", "cairns", "darwin", "toowoomba", "ballarat", "bendigo"
                 ],
                 media_outlets=["abc_au", "sbs", "seven", "nine", "ten", "sky_au"],
-                alternative_names=["au", "aus"]
+                alternative_names=["aussie"],
+                iso_codes=["au", "aus"]
             ),
             
             "New Zealand": CountryPattern(
@@ -207,79 +238,182 @@ class CountryPatternsDatabase:
                 keywords=["new_zealand", "newzealand", "kiwi"],
                 cities=["auckland", "wellington", "christchurch", "hamilton", "tauranga", "dunedin"],
                 media_outlets=["tvnz", "three", "maori_tv"],
-                alternative_names=["nz", "aotearoa"]
+                alternative_names=["aotearoa"],
+                iso_codes=["nz", "nzl"]
             ),
             
-            # 🇮🇳 Südasien
+            # =================================================================
+            # 🇮🇳 Südasien (Enhanced)
+            # =================================================================
             "India": CountryPattern(
                 country="India",
-                keywords=["india", "indian", "bharat"],
+                keywords=["india", "indian", "bharat", "hindustan"],  # *** FIXED ***
                 cities=[
                     "mumbai", "delhi", "bangalore", "hyderabad", "ahmedabad", "chennai", "kolkata",
                     "surat", "pune", "jaipur", "lucknow", "kanpur", "nagpur", "indore", "thane",
-                    "bhopal", "visakhapatnam", "pimpri_chinchwad", "patna", "vadodara", "ghaziabad",
-                    "ludhiana", "agra", "nashik", "faridabad", "meerut", "rajkot", "kalyan_dombivli",
-                    "vasai_virar", "varanasi", "srinagar", "aurangabad", "dhanbad", "amritsar",
-                    "navi_mumbai", "allahabad", "howrah", "ranchi", "gwalior", "jabalpur", "coimbatore"
+                    "bhopal", "visakhapatnam", "patna", "vadodara", "ghaziabad", "ludhiana",
+                    "agra", "nashik", "faridabad", "meerut", "rajkot", "varanasi", "srinagar"
                 ],
                 media_outlets=["ndtv", "times_now", "india_today", "zee", "star", "sony", "aaj_tak"],
-                alternative_names=["in", "ind", "hindustan"]
+                alternative_names=["hindustan", "bharat"],  # *** FIXED: NO "in" ***
+                iso_codes=["ind", "in_country"]  # *** SAFE alternatives ***
             ),
             
             "Pakistan": CountryPattern(
                 country="Pakistan",
                 keywords=["pakistan", "pakistani"],
                 cities=["karachi", "lahore", "faisalabad", "rawalpindi", "gujranwala", "peshawar", "multan", "islamabad"],
-                media_outlets=["ard", "geo", "express", "dawn", "samaa"],
-                alternative_names=["pk", "pak"]
+                media_outlets=["ard_pakistan", "geo", "express", "dawn", "samaa"],
+                alternative_names=[],
+                iso_codes=["pk", "pak"]
             ),
             
             "Bangladesh": CountryPattern(
                 country="Bangladesh",
                 keywords=["bangladesh", "bangladeshi"],
                 cities=["dhaka", "chittagong", "sylhet", "khulna", "rajshahi", "comilla"],
-                media_outlets=["btv", "channel_i", "ntv", "somoy"],
-                alternative_names=["bd", "ban"]
+                media_outlets=["btv", "channel_i", "ntv_bd", "somoy"],
+                alternative_names=[],
+                iso_codes=["bd", "bgd"]
             ),
             
             "Sri Lanka": CountryPattern(
                 country="Sri Lanka",
                 keywords=["sri_lanka", "srilanka", "ceylon"],
                 cities=["colombo", "kandy", "galle", "jaffna", "negombo", "trincomalee"],
-                media_outlets=["itv", "sirasa", "derana"],
-                alternative_names=["lk", "sri"]
+                media_outlets=["itv_lk", "sirasa", "derana"],
+                alternative_names=["ceylon"],
+                iso_codes=["lk", "lka"]
             ),
             
-            # 🇨🇳 Ostasien
+            # =================================================================
+            # 🌍 MIDDLE EAST & CENTRAL ASIA (*** NEW ***)
+            # =================================================================
+            "Afghanistan": CountryPattern(  # *** NEW: Missing country! ***
+                country="Afghanistan",
+                keywords=["afghanistan", "afghan"],
+                cities=["kabul", "kandahar", "herat", "mazar_i_sharif", "jalalabad", "kunduz", "balkh", "farah"],
+                media_outlets=["tolo", "ariana", "shamshad", "lemar"],
+                alternative_names=["afghanestan"],
+                iso_codes=["af", "afg"]
+            ),
+            
+            "Iran": CountryPattern(  # *** NEW ***
+                country="Iran",
+                keywords=["iran", "iranian", "persia", "persian"],
+                cities=["tehran", "mashhad", "isfahan", "karaj", "shiraz", "tabriz", "qom", "ahvaz"],
+                media_outlets=["irib", "press_tv", "manoto"],
+                alternative_names=["persia"],
+                iso_codes=["ir", "irn"]
+            ),
+            
+            "Iraq": CountryPattern(  # *** NEW ***
+                country="Iraq",
+                keywords=["iraq", "iraqi"],
+                cities=["baghdad", "basra", "mosul", "erbil", "najaf", "karbala", "sulaymaniyah"],
+                media_outlets=["iraqiya", "kurdistan_tv", "alsumaria"],
+                alternative_names=[],
+                iso_codes=["iq", "irq"]
+            ),
+            
+            "Saudi Arabia": CountryPattern(  # *** NEW ***
+                country="Saudi Arabia",
+                keywords=["saudi", "saudi_arabia", "kingdom_saudi"],
+                cities=["riyadh", "jeddah", "mecca", "medina", "dammam", "khobar", "tabuk", "abha"],
+                media_outlets=["saudi_tv", "al_arabiya", "mbc", "sbc"],
+                alternative_names=["ksa", "kingdom_saudi_arabia"],
+                iso_codes=["sa", "sau"]
+            ),
+            
+            "Turkey": CountryPattern(  # *** ENHANCED ***
+                country="Turkey",
+                keywords=["turkey", "turkish", "turkiye", "türkiye"],
+                cities=["istanbul", "ankara", "izmir", "bursa", "adana", "gaziantep", "konya", "antalya"],
+                media_outlets=["trt", "atv", "show", "kanal_d", "fox_tr"],
+                alternative_names=["turkiye", "türkiye"],
+                iso_codes=["tr", "tur"]
+            ),
+            
+            "Israel": CountryPattern(  # *** ENHANCED ***
+                country="Israel",
+                keywords=["israel", "israeli"],
+                cities=["jerusalem", "tel_aviv", "haifa", "rishon_lezion", "petah_tikva", "ashdod", "netanya"],
+                media_outlets=["kan", "reshet", "keshet", "channel_12"],
+                alternative_names=[],
+                iso_codes=["il", "isr"]
+            ),
+            
+            "Lebanon": CountryPattern(  # *** NEW ***
+                country="Lebanon",
+                keywords=["lebanon", "lebanese"],
+                cities=["beirut", "tripoli", "sidon", "tyre", "zahle", "jounieh"],
+                media_outlets=["lbc", "mtv_lb", "otv", "al_jadeed"],
+                alternative_names=[],
+                iso_codes=["lb", "lbn"]
+            ),
+            
+            "Syria": CountryPattern(  # *** NEW ***
+                country="Syria",
+                keywords=["syria", "syrian"],
+                cities=["damascus", "aleppo", "homs", "latakia", "hama", "deir_ez_zor"],
+                media_outlets=["syrian_tv", "orient", "syria_news"],
+                alternative_names=[],
+                iso_codes=["sy", "syr"]
+            ),
+            
+            "Jordan": CountryPattern(  # *** NEW ***
+                country="Jordan",
+                keywords=["jordan", "jordanian"],
+                cities=["amman", "zarqa", "irbid", "aqaba", "salt", "madaba"],
+                media_outlets=["jordan_tv", "roya", "ammontv"],
+                alternative_names=[],
+                iso_codes=["jo", "jor"]
+            ),
+            
+            "UAE": CountryPattern(  # *** NEW ***
+                country="UAE",
+                keywords=["uae", "emirates", "united_arab_emirates"],
+                cities=["dubai", "abu_dhabi", "sharjah", "ajman", "fujairah", "ras_al_khaimah"],
+                media_outlets=["dubai_tv", "abu_dhabi_tv", "mbc"],
+                alternative_names=["united_arab_emirates"],
+                iso_codes=["ae", "are"]
+            ),
+            
+            "Kazakhstan": CountryPattern(  # *** NEW ***
+                country="Kazakhstan",
+                keywords=["kazakhstan", "kazakh"],
+                cities=["almaty", "nur_sultan", "astana", "shymkent", "aktobe", "taraz"],
+                media_outlets=["khabar", "channel_31"],
+                alternative_names=["qazaqstan"],
+                iso_codes=["kz", "kaz"]
+            ),
+            
+            # =================================================================
+            # 🇨🇳 Ostasien (Enhanced)
+            # =================================================================
             "China": CountryPattern(
                 country="China",
-                keywords=["china", "chinese", "prc"],
+                keywords=["china", "chinese", "prc", "peoples_republic"],
                 cities=[
                     "beijing", "shanghai", "guangzhou", "shenzhen", "tianjin", "wuhan", "chengdu",
                     "dongguan", "chongqing", "nanjing", "shenyang", "hangzhou", "xian", "harbin",
-                    "suzhou", "qingdao", "dalian", "zhengzhou", "shantou", "jinan", "changchun",
-                    "kunming", "changsha", "taiyuan", "xiamen", "hefei", "urumqi", "fuzhou",
-                    "wuxi", "zhongshan", "wenzhou", "yantai", "zibo", "nanning", "guiyang",
-                    "lanzhou", "shijiazhuang", "luoyang", "weifang", "maoming", "zhuhai",
-                    "handan", "jining", "anshan", "kaifeng", "tangshan", "pingdingshan"
+                    "suzhou", "qingdao", "dalian", "zhengzhou", "jinan", "changchun", "kunming"
                 ],
                 media_outlets=["cctv", "cgtn", "xinhua", "phoenix", "ifeng"],
-                alternative_names=["cn", "chn", "peoples_republic"]
+                alternative_names=["peoples_republic_china"],
+                iso_codes=["cn", "chn"]
             ),
             
             "Japan": CountryPattern(
                 country="Japan",
-                keywords=["japan", "japanese", "nippon"],
+                keywords=["japan", "japanese", "nippon", "nihon"],
                 cities=[
                     "tokyo", "yokohama", "osaka", "nagoya", "sapporo", "fukuoka", "kobe", "kawasaki",
-                    "kyoto", "saitama", "hiroshima", "sendai", "kitakyushu", "chiba", "sakai",
-                    "niigata", "hamamatsu", "okayama", "sagamihara", "shizuoka", "kumamoto",
-                    "kagoshima", "matsuyama", "kanazawa", "utsunomiya", "matsudo", "kawaguchi",
-                    "takatsuki", "toyama", "nara", "suita", "wakayama", "nishinomiya", "kurashiki",
-                    "maebashi", "naha", "akita", "fukuyama", "koriyama", "ichikawa", "iwaki"
+                    "kyoto", "saitama", "hiroshima", "sendai", "kitakyushu", "chiba", "sakai"
                 ],
                 media_outlets=["nhk", "tbs", "fuji", "asahi", "nippon", "tokyo_mx"],
-                alternative_names=["jp", "jpn"]
+                alternative_names=["nippon", "nihon"],
+                iso_codes=["jp", "jpn"]
             ),
             
             "South Korea": CountryPattern(
@@ -287,16 +421,29 @@ class CountryPatternsDatabase:
                 keywords=["korea", "korean", "south_korea"],
                 cities=["seoul", "busan", "incheon", "daegu", "daejeon", "gwangju", "suwon", "ulsan"],
                 media_outlets=["kbs", "mbc", "sbs", "jtbc", "ytn"],
-                alternative_names=["kr", "kor", "republic_of_korea"]
+                alternative_names=["republic_of_korea"],
+                iso_codes=["kr", "kor"]
             ),
             
-            # 🇹🇭 Südostasien
+            "North Korea": CountryPattern(  # *** NEW ***
+                country="North Korea",
+                keywords=["north_korea", "dprk", "democratic_peoples_republic"],
+                cities=["pyongyang", "hamhung", "chongjin", "nampo", "wonsan"],
+                media_outlets=["kcna", "kctv"],
+                alternative_names=["dprk"],
+                iso_codes=["kp", "prk"]
+            ),
+            
+            # =================================================================
+            # 🇹🇭 Südostasien (Enhanced)
+            # =================================================================
             "Thailand": CountryPattern(
                 country="Thailand",
                 keywords=["thailand", "thai", "siam"],
                 cities=["bangkok", "chiang_mai", "pattaya", "phuket", "hat_yai", "nakhon_ratchasima"],
                 media_outlets=["thai_pbs", "channel3", "channel7", "workpoint"],
-                alternative_names=["th", "tha"]
+                alternative_names=["siam"],
+                iso_codes=["th", "tha"]
             ),
             
             "Vietnam": CountryPattern(
@@ -304,7 +451,8 @@ class CountryPatternsDatabase:
                 keywords=["vietnam", "vietnamese"],
                 cities=["ho_chi_minh_city", "hanoi", "da_nang", "can_tho", "bien_hoa", "hue"],
                 media_outlets=["vtv", "vfc", "htv"],
-                alternative_names=["vn", "vie"]
+                alternative_names=["viet_nam"],
+                iso_codes=["vn", "vnm"]
             ),
             
             "Philippines": CountryPattern(
@@ -312,7 +460,8 @@ class CountryPatternsDatabase:
                 keywords=["philippines", "filipino", "pilipinas"],
                 cities=["manila", "quezon_city", "caloocan", "davao", "cebu", "zamboanga", "antipolo"],
                 media_outlets=["abs_cbn", "gma", "tv5", "cnn_philippines"],
-                alternative_names=["ph", "phl"]
+                alternative_names=["pilipinas"],
+                iso_codes=["ph", "phl"]
             ),
             
             "Indonesia": CountryPattern(
@@ -320,7 +469,8 @@ class CountryPatternsDatabase:
                 keywords=["indonesia", "indonesian"],
                 cities=["jakarta", "surabaya", "bandung", "bekasi", "medan", "tangerang", "depok"],
                 media_outlets=["tvri", "sctv", "rcti", "indosiar", "trans7"],
-                alternative_names=["id", "idn"]
+                alternative_names=[],
+                iso_codes=["id", "idn"]
             ),
             
             "Malaysia": CountryPattern(
@@ -328,7 +478,8 @@ class CountryPatternsDatabase:
                 keywords=["malaysia", "malaysian"],
                 cities=["kuala_lumpur", "george_town", "ipoh", "shah_alam", "petaling_jaya", "johor_bahru"],
                 media_outlets=["rtm", "tv3", "ntv7", "8tv", "astro"],
-                alternative_names=["my", "mys"]
+                alternative_names=[],
+                iso_codes=["my", "mys"]
             ),
             
             "Singapore": CountryPattern(
@@ -336,24 +487,56 @@ class CountryPatternsDatabase:
                 keywords=["singapore", "singaporean"],
                 cities=["singapore"],
                 media_outlets=["mediacorp", "cna", "channel8"],
-                alternative_names=["sg", "sgp"]
+                alternative_names=[],
+                iso_codes=["sg", "sgp"]
             ),
             
-            # 🇪🇺 Europa
+            "Myanmar": CountryPattern(  # *** NEW ***
+                country="Myanmar",
+                keywords=["myanmar", "burma", "burmese"],
+                cities=["yangon", "mandalay", "naypyidaw", "mawlamyine", "bago"],
+                media_outlets=["mrtv", "dvb"],
+                alternative_names=["burma"],
+                iso_codes=["mm", "mmr"]
+            ),
+            
+            "Cambodia": CountryPattern(  # *** NEW ***
+                country="Cambodia",
+                keywords=["cambodia", "cambodian", "khmer"],
+                cities=["phnom_penh", "siem_reap", "battambang", "sihanoukville"],
+                media_outlets=["tvk", "bayon"],
+                alternative_names=["kampuchea"],
+                iso_codes=["kh", "khm"]
+            ),
+            
+            "Laos": CountryPattern(  # *** NEW ***
+                country="Laos",
+                keywords=["laos", "lao"],
+                cities=["vientiane", "luang_prabang", "savannakhet", "pakse"],
+                media_outlets=["lntv", "lao_tv"],
+                alternative_names=["lao_pdr"],
+                iso_codes=["la", "lao"]
+            ),
+            
+            # =================================================================
+            # 🇪🇺 Europa (Enhanced)
+            # =================================================================
             "France": CountryPattern(
                 country="France",
-                keywords=["france", "french", "français"],
+                keywords=["france", "french", "français", "francais"],
                 cities=["paris", "marseille", "lyon", "toulouse", "nice", "nantes", "strasbourg", "montpellier"],
                 media_outlets=["tf1", "france2", "m6", "canal+", "france24", "bfm"],
-                alternative_names=["fr", "fra"]
+                alternative_names=["republique_francaise"],
+                iso_codes=["fr", "fra"]
             ),
             
             "Spain": CountryPattern(
                 country="Spain",
-                keywords=["spain", "spanish", "españa"],
+                keywords=["spain", "spanish", "españa", "espana"],
                 cities=["madrid", "barcelona", "valencia", "seville", "zaragoza", "malaga", "murcia"],
                 media_outlets=["tve", "antena3", "telecinco", "la_sexta"],
-                alternative_names=["es", "esp"]
+                alternative_names=["españa", "espana"],
+                iso_codes=["es", "esp"]
             ),
             
             "Italy": CountryPattern(
@@ -361,15 +544,17 @@ class CountryPatternsDatabase:
                 keywords=["italy", "italian", "italia"],
                 cities=["rome", "milan", "naples", "turin", "palermo", "genoa", "bologna", "florence"],
                 media_outlets=["rai", "mediaset", "la7", "sky_italia"],
-                alternative_names=["it", "ita"]
+                alternative_names=["italia"],
+                iso_codes=["ita", "italy_code"]  # *** FIXED: No "it" ***
             ),
             
             "Netherlands": CountryPattern(
                 country="Netherlands",
                 keywords=["netherlands", "dutch", "holland"],
                 cities=["amsterdam", "rotterdam", "the_hague", "utrecht", "eindhoven", "tilburg"],
-                media_outlets=["nos", "rtl", "sbs", "npo"],
-                alternative_names=["nl", "nld"]
+                media_outlets=["nos", "rtl_nl", "sbs", "npo"],
+                alternative_names=["holland"],
+                iso_codes=["nl", "nld"]
             ),
             
             "Poland": CountryPattern(
@@ -377,108 +562,26 @@ class CountryPatternsDatabase:
                 keywords=["poland", "polish", "polska"],
                 cities=["warsaw", "krakow", "lodz", "wroclaw", "poznan", "gdansk", "szczecin"],
                 media_outlets=["tvp", "polsat", "tvn"],
-                alternative_names=["pl", "pol"]
+                alternative_names=["polska"],
+                iso_codes=["pl", "pol"]
             ),
             
-            # 🇧🇷 Lateinamerika
-            "Brazil": CountryPattern(
-                country="Brazil",
-                keywords=["brazil", "brazilian", "brasil"],
-                cities=["sao_paulo", "rio_de_janeiro", "brasilia", "salvador", "fortaleza", "belo_horizonte"],
-                media_outlets=["globo", "sbt", "record", "band"],
-                alternative_names=["br", "bra"]
-            ),
-            
-            "Mexico": CountryPattern(
-                country="Mexico",
-                keywords=["mexico", "mexican", "méxico"],
-                cities=["mexico_city", "guadalajara", "monterrey", "puebla", "tijuana", "leon"],
-                media_outlets=["televisa", "tv_azteca", "imagen"],
-                alternative_names=["mx", "mex"]
-            ),
-            
-            "Argentina": CountryPattern(
-                country="Argentina",
-                keywords=["argentina", "argentinian"],
-                cities=["buenos_aires", "cordoba", "rosario", "mendoza", "la_plata", "tucuman"],
-                media_outlets=["telefe", "canal13", "america"],
-                alternative_names=["ar", "arg"]
-            ),
-            
-            # 🇿🇦 Afrika
-            "South Africa": CountryPattern(
-                country="South Africa",
-                keywords=["south_africa", "southafrican"],
-                cities=["johannesburg", "cape_town", "durban", "pretoria", "port_elizabeth", "bloemfontein"],
-                media_outlets=["sabc", "etv", "supersport"],
-                alternative_names=["za", "rsa"]
-            ),
-            
-            "Nigeria": CountryPattern(
-                country="Nigeria",
-                keywords=["nigeria", "nigerian"],
-                cities=["lagos", "abuja", "kano", "ibadan", "kaduna", "port_harcourt"],
-                media_outlets=["nta", "channels", "silverbird"],
-                alternative_names=["ng", "nga"]
-            ),
-            
-            "Egypt": CountryPattern(
-                country="Egypt",
-                keywords=["egypt", "egyptian"],
-                cities=["cairo", "alexandria", "giza", "luxor", "aswan", "hurghada"],
-                media_outlets=["ertu", "cbc", "dream"],
-                alternative_names=["eg", "egy"]
-            ),
-            
-            # 🇮🇱 Naher Osten
-            "Israel": CountryPattern(
-                country="Israel",
-                keywords=["israel", "israeli"],
-                cities=["jerusalem", "tel_aviv", "haifa", "rishon_lezion", "petah_tikva", "ashdod"],
-                media_outlets=["kan", "reshet", "keshet"],
-                alternative_names=["il", "isr"]
-            ),
-            
-            "Turkey": CountryPattern(
-                country="Turkey",
-                keywords=["turkey", "turkish", "türkiye"],
-                cities=["istanbul", "ankara", "izmir", "bursa", "adana", "gaziantep", "konya"],
-                media_outlets=["trt", "atv", "show", "kanal_d"],
-                alternative_names=["tr", "tur"]
-            ),
-            
-            # 🇷🇺 Osteuropa
-            "Russia": CountryPattern(
-                country="Russia",
-                keywords=["russia", "russian", "россия"],
-                cities=["moscow", "st_petersburg", "novosibirsk", "yekaterinburg", "nizhny_novgorod"],
-                media_outlets=["channel_one", "rossiya", "ntv", "ren_tv"],
-                alternative_names=["ru", "rus"]
-            ),
-            
-            "Ukraine": CountryPattern(
-                country="Ukraine",
-                keywords=["ukraine", "ukrainian", "україна"],
-                cities=["kyiv", "kharkiv", "odesa", "dnipro", "lviv", "zaporizhzhia"],
-                media_outlets=["1+1", "inter", "ictv", "stb"],
-                alternative_names=["ua", "ukr"]
-            ),
-            
-            # 🇸🇪 Nordeuropa
             "Sweden": CountryPattern(
                 country="Sweden",
                 keywords=["sweden", "swedish", "sverige"],
                 cities=["stockholm", "gothenburg", "malmo", "uppsala", "vasteras", "orebro"],
-                media_outlets=["svt", "tv4", "tv3"],
-                alternative_names=["se", "swe"]
+                media_outlets=["svt", "tv4", "tv3_se"],
+                alternative_names=["sverige"],
+                iso_codes=["se", "swe"]
             ),
             
             "Norway": CountryPattern(
                 country="Norway",
                 keywords=["norway", "norwegian", "norge"],
                 cities=["oslo", "bergen", "stavanger", "trondheim", "drammen", "fredrikstad"],
-                media_outlets=["nrk", "tv2", "tvnorge"],
-                alternative_names=["no", "nor"]
+                media_outlets=["nrk", "tv2_no", "tvnorge"],
+                alternative_names=["norge"],
+                iso_codes=["nor", "norway_code"]  # *** FIXED: No "no" ***
             ),
             
             "Denmark": CountryPattern(
@@ -486,7 +589,8 @@ class CountryPatternsDatabase:
                 keywords=["denmark", "danish", "danmark"],
                 cities=["copenhagen", "aarhus", "odense", "aalborg", "esbjerg", "randers"],
                 media_outlets=["dr", "tv2_dk", "kanal5"],
-                alternative_names=["dk", "dnk"]
+                alternative_names=["danmark"],
+                iso_codes=["dk", "dnk"]
             ),
             
             "Finland": CountryPattern(
@@ -494,59 +598,316 @@ class CountryPatternsDatabase:
                 keywords=["finland", "finnish", "suomi"],
                 cities=["helsinki", "espoo", "tampere", "vantaa", "oulu", "turku"],
                 media_outlets=["yle", "mtv3", "nelonen"],
-                alternative_names=["fi", "fin"]
-            )
+                alternative_names=["suomi"],
+                iso_codes=["fi", "fin"]
+            ),
+            
+            "Belgium": CountryPattern(  # *** NEW ***
+                country="Belgium",
+                keywords=["belgium", "belgian", "belgie", "belgique"],
+                cities=["brussels", "antwerp", "ghent", "charleroi", "liege", "bruges"],
+                media_outlets=["vrt", "rtbf", "vtm"],
+                alternative_names=["belgie", "belgique"],
+                iso_codes=["be", "bel"]
+            ),
+            
+            "Portugal": CountryPattern(  # *** NEW ***
+                country="Portugal",
+                keywords=["portugal", "portuguese"],
+                cities=["lisbon", "porto", "braga", "coimbra", "funchal", "aveiro"],
+                media_outlets=["rtp", "sic", "tvi"],
+                alternative_names=[],
+                iso_codes=["pt", "prt"]
+            ),
+            
+            "Greece": CountryPattern(  # *** NEW ***
+                country="Greece",
+                keywords=["greece", "greek", "hellas"],
+                cities=["athens", "thessaloniki", "patras", "heraklion", "larissa"],
+                media_outlets=["ert", "mega", "ant1"],
+                alternative_names=["hellas", "ellada"],
+                iso_codes=["gr", "grc"]
+            ),
+            
+            "Czech Republic": CountryPattern(  # *** NEW ***
+                country="Czech Republic",
+                keywords=["czech", "czechia", "czech_republic"],
+                cities=["prague", "brno", "ostrava", "plzen", "liberec"],
+                media_outlets=["ct", "nova", "prima"],
+                alternative_names=["czechia"],
+                iso_codes=["cz", "cze"]
+            ),
+            
+            "Hungary": CountryPattern(  # *** NEW ***
+                country="Hungary",
+                keywords=["hungary", "hungarian", "magyarorszag"],
+                cities=["budapest", "debrecen", "szeged", "miskolc", "pecs"],
+                media_outlets=["mtv", "rtl_klub", "tv2_hu"],
+                alternative_names=["magyarorszag"],
+                iso_codes=["hu", "hun"]
+            ),
+            
+            # =================================================================
+            # 🇷🇺 Osteuropa & Russland (Enhanced)
+            # =================================================================
+            "Russia": CountryPattern(
+                country="Russia",
+                keywords=["russia", "russian", "россия", "rossiya"],
+                cities=["moscow", "st_petersburg", "novosibirsk", "yekaterinburg", "nizhny_novgorod", "kazan"],
+                media_outlets=["channel_one", "rossiya", "ntv_ru", "ren_tv"],
+                alternative_names=["rossiya", "российская_федерация"],
+                iso_codes=["ru", "rus"]
+            ),
+            
+            "Ukraine": CountryPattern(
+                country="Ukraine",
+                keywords=["ukraine", "ukrainian", "україна", "ukraina"],
+                cities=["kyiv", "kiev", "kharkiv", "odesa", "dnipro", "lviv", "zaporizhzhia"],
+                media_outlets=["1+1", "inter", "ictv", "stb"],
+                alternative_names=["ukraina"],
+                iso_codes=["ua", "ukr"]
+            ),
+            
+            "Belarus": CountryPattern(  # *** NEW ***
+                country="Belarus",
+                keywords=["belarus", "belarusian", "белarus"],
+                cities=["minsk", "gomel", "mogilev", "vitebsk", "grodno", "brest"],
+                media_outlets=["ont", "stv", "belarus_tv"],
+                alternative_names=["belorussia"],
+                iso_codes=["by", "blr"]
+            ),
+            
+            # =================================================================
+            # 🇧🇷 Lateinamerika (Enhanced)
+            # =================================================================
+            "Brazil": CountryPattern(
+                country="Brazil",
+                keywords=["brazil", "brazilian", "brasil"],
+                cities=["sao_paulo", "rio_de_janeiro", "brasilia", "salvador", "fortaleza", "belo_horizonte"],
+                media_outlets=["globo", "sbt", "record", "band"],
+                alternative_names=["brasil"],
+                iso_codes=["br", "bra"]
+            ),
+            
+            "Mexico": CountryPattern(
+                country="Mexico",
+                keywords=["mexico", "mexican", "méxico"],
+                cities=["mexico_city", "guadalajara", "monterrey", "puebla", "tijuana", "leon"],
+                media_outlets=["televisa", "tv_azteca", "imagen"],
+                alternative_names=["méxico"],
+                iso_codes=["mx", "mex"]
+            ),
+            
+            "Argentina": CountryPattern(
+                country="Argentina",
+                keywords=["argentina", "argentinian"],
+                cities=["buenos_aires", "cordoba", "rosario", "mendoza", "la_plata", "tucuman"],
+                media_outlets=["telefe", "canal13", "america"],
+                alternative_names=[],
+                iso_codes=["ar", "arg"]
+            ),
+            
+            "Colombia": CountryPattern(  # *** NEW ***
+                country="Colombia",
+                keywords=["colombia", "colombian"],
+                cities=["bogota", "medellin", "cali", "barranquilla", "cartagena", "cucuta"],
+                media_outlets=["caracol", "rcn", "teleantioquia"],
+                alternative_names=[],
+                iso_codes=["co", "col"]
+            ),
+            
+            "Chile": CountryPattern(  # *** NEW ***
+                country="Chile",
+                keywords=["chile", "chilean"],
+                cities=["santiago", "valparaiso", "concepcion", "la_serena", "antofagasta"],
+                media_outlets=["tvn", "canal13_cl", "mega_cl"],
+                alternative_names=[],
+                iso_codes=["cl", "chl"]
+            ),
+            
+            "Peru": CountryPattern(  # *** NEW ***
+                country="Peru",
+                keywords=["peru", "peruvian"],
+                cities=["lima", "arequipa", "trujillo", "chiclayo", "huancayo"],
+                media_outlets=["america_tv", "latina", "panamericana"],
+                alternative_names=[],
+                iso_codes=["pe", "per"]
+            ),
+            
+            "Venezuela": CountryPattern(  # *** NEW ***
+                country="Venezuela",
+                keywords=["venezuela", "venezuelan"],
+                cities=["caracas", "maracaibo", "valencia", "barquisimeto", "maracay"],
+                media_outlets=["vtv", "venevision", "televen"],
+                alternative_names=[],
+                iso_codes=["ve", "ven"]
+            ),
+            
+            # =================================================================
+            # 🇿🇦 Afrika (Enhanced)
+            # =================================================================
+            "South Africa": CountryPattern(
+                country="South Africa",
+                keywords=["south_africa", "southafrican"],
+                cities=["johannesburg", "cape_town", "durban", "pretoria", "port_elizabeth", "bloemfontein"],
+                media_outlets=["sabc", "etv", "supersport"],
+                alternative_names=[],
+                iso_codes=["za", "zaf"]
+            ),
+            
+            "Nigeria": CountryPattern(
+                country="Nigeria",
+                keywords=["nigeria", "nigerian"],
+                cities=["lagos", "abuja", "kano", "ibadan", "kaduna", "port_harcourt"],
+                media_outlets=["nta", "channels", "silverbird"],
+                alternative_names=[],
+                iso_codes=["ng", "nga"]
+            ),
+            
+            "Egypt": CountryPattern(
+                country="Egypt",
+                keywords=["egypt", "egyptian"],
+                cities=["cairo", "alexandria", "giza", "luxor", "aswan", "hurghada"],
+                media_outlets=["ertu", "cbc_eg", "dream"],
+                alternative_names=["misr"],
+                iso_codes=["eg", "egy"]
+            ),
+            
+            "Kenya": CountryPattern(  # *** NEW ***
+                country="Kenya",
+                keywords=["kenya", "kenyan"],
+                cities=["nairobi", "mombasa", "kisumu", "nakuru", "eldoret"],
+                media_outlets=["kbc", "citizen", "ntv_ke"],
+                alternative_names=[],
+                iso_codes=["ke", "ken"]
+            ),
+            
+            "Ghana": CountryPattern(  # *** NEW ***
+                country="Ghana",
+                keywords=["ghana", "ghanaian"],
+                cities=["accra", "kumasi", "tamale", "cape_coast", "sekondi"],
+                media_outlets=["gtv", "joy_news", "citi"],
+                alternative_names=[],
+                iso_codes=["gh", "gha"]
+            ),
+            
+            "Ethiopia": CountryPattern(  # *** NEW ***
+                country="Ethiopia",
+                keywords=["ethiopia", "ethiopian"],
+                cities=["addis_ababa", "dire_dawa", "mekelle", "gondar", "awassa"],
+                media_outlets=["ebc", "fana", "walta"],
+                alternative_names=["abyssinia"],
+                iso_codes=["et", "eth"]
+            ),
+            
+            "Morocco": CountryPattern(  # *** NEW ***
+                country="Morocco",
+                keywords=["morocco", "moroccan", "maghreb"],
+                cities=["casablanca", "rabat", "fes", "marrakech", "agadir", "tangier"],
+                media_outlets=["2m", "al_aoula", "medi1"],
+                alternative_names=["maroc"],
+                iso_codes=["ma", "mar"]
+            ),
         }
         
         return patterns
+    
+    def _build_country_name_variations(self) -> Dict[str, str]:
+        """*** NEW *** Baut Variationen von Ländernamen für exakte Suche"""
+        variations = {}
+        
+        for country, pattern in self.patterns.items():
+            # Exakter Ländername
+            variations[country.lower()] = country
+            variations[country.replace(" ", "_").lower()] = country
+            variations[country.replace(" ", "").lower()] = country
+            
+            # Keywords
+            for keyword in pattern.keywords:
+                variations[keyword.lower()] = country
+            
+            # Alternative Namen
+            for alt_name in pattern.alternative_names:
+                variations[alt_name.lower()] = country
+        
+        return variations
     
     def get_pattern(self, country: str) -> Optional[CountryPattern]:
         """Gibt Pattern für ein Land zurück"""
         return self.patterns.get(country)
     
-    def find_matching_countries(self, text: str) -> List[Tuple[str, float, List[str]]]:
-        """Findet passende Länder für einen Text
+    def find_exact_country_match(self, text: str) -> Optional[str]:
+        """*** NEW *** Findet exakte Ländernamen-Matches"""
+        text_lower = text.lower()
         
-        Args:
-            text: Zu analysierender Text
-            
-        Returns:
-            Liste von (country, confidence, matched_patterns)
-        """
+        # Exact matches haben höchste Priorität
+        for variation, country in self._country_name_variations.items():
+            if variation in text_lower:
+                return country
+        
+        return None
+    
+    def find_matching_countries(self, text: str) -> List[Tuple[str, float, List[str]]]:
+        """*** ENHANCED *** Findet passende Länder für einen Text"""
         text_lower = text.lower()
         matches = []
         
+        # *** NEW: First check for exact country name matches ***
+        exact_match = self.find_exact_country_match(text)
+        if exact_match:
+            matches.append((exact_match, 0.95, [f"exact_name:{exact_match.lower()}"]))
+        
+        # Pattern matching for all countries
         for country, pattern in self.patterns.items():
+            if country == exact_match:
+                continue  # Skip, already added as exact match
+            
             matched_patterns = []
             total_score = 0
             
-            # Prüfe alle Pattern-Typen
+            # *** ENHANCED SCORING SYSTEM ***
+            
+            # Check keywords (highest priority)
             for keyword in pattern.keywords:
                 if keyword in text_lower:
+                    # Longer keywords get higher scores
+                    keyword_score = len(keyword) if len(keyword) > 3 else 2
                     matched_patterns.append(f"keyword:{keyword}")
-                    total_score += 3  # Keywords haben höchste Priorität
+                    total_score += keyword_score
             
+            # Check cities (medium-high priority)
             for city in pattern.cities:
                 if city in text_lower:
                     matched_patterns.append(f"city:{city}")
-                    total_score += 2  # Städte haben mittlere Priorität
+                    total_score += 2
             
+            # Check media outlets (medium priority)
             for media in pattern.media_outlets:
                 if media in text_lower:
                     matched_patterns.append(f"media:{media}")
-                    total_score += 2  # Medien haben mittlere Priorität
+                    total_score += 1.5
             
+            # Check alternative names (medium priority)
             for alt_name in pattern.alternative_names:
                 if alt_name in text_lower:
                     matched_patterns.append(f"alt:{alt_name}")
-                    total_score += 1  # Alternative Namen haben niedrige Priorität
+                    total_score += 1
+            
+            # Check ISO codes (low priority, only if 3+ chars)
+            for iso_code in pattern.iso_codes:
+                if len(iso_code) >= 3 and iso_code in text_lower:
+                    matched_patterns.append(f"iso:{iso_code}")
+                    total_score += 0.5
             
             if matched_patterns:
-                # Berechne Confidence basierend auf Score und Pattern-Anzahl
-                confidence = min(0.99, total_score / 10.0 + len(matched_patterns) * 0.1)
+                # *** ENHANCED CONFIDENCE CALCULATION ***
+                base_confidence = min(0.9, total_score / 15.0)
+                pattern_bonus = len(matched_patterns) * 0.05
+                confidence = min(0.99, base_confidence + pattern_bonus)
+                
                 matches.append((country, confidence, matched_patterns))
         
-        # Sortiere nach Confidence
+        # Sort by confidence (highest first)
         matches.sort(key=lambda x: x[1], reverse=True)
         return matches
 
@@ -556,13 +917,13 @@ class CountryPatternsDatabase:
 # =============================================================================
 
 class EnhancedCountryDetector:
-    """Enterprise-Level Country Detection mit User-Fallback"""
+    """*** ENHANCED *** Enterprise-Level Country Detection v2.0"""
     
     def __init__(self):
-        self.database = CountryPatternsDatabase()
+        self.database = EnhancedCountryPatternsDatabase()
         self.logger = logging.getLogger(CountryDetectionConstants.LOGGER_NAME)
         
-        # Initialisiere Session State
+        # Initialize Session State
         if CountryDetectionConstants.SESSION_COUNTRY_MAPPING not in st.session_state:
             st.session_state[CountryDetectionConstants.SESSION_COUNTRY_MAPPING] = {}
         
@@ -575,17 +936,9 @@ class EnhancedCountryDetector:
         language: str = "en",
         source_path: Optional[str] = None
     ) -> DetectionResult:
-        """Hauptfunktion für Länder-Erkennung
+        """*** ENHANCED *** Hauptfunktion für Länder-Erkennung"""
         
-        Args:
-            filename: Dateiname zur Analyse
-            language: Sprache der Analyse (de/en)
-            source_path: Optionaler vollständiger Pfad
-            
-        Returns:
-            DetectionResult mit Erkennungsergebnis
-        """
-        # Cache prüfen
+        # Cache check
         cache_key = f"{filename}_{language}"
         if cache_key in st.session_state[CountryDetectionConstants.SESSION_COUNTRY_MAPPING]:
             cached_result = st.session_state[CountryDetectionConstants.SESSION_COUNTRY_MAPPING][cache_key]
@@ -593,89 +946,123 @@ class EnhancedCountryDetector:
             return DetectionResult(
                 country=cached_result,
                 confidence=1.0,
-                method=DetectionMethod.USER_OVERRIDE
+                method=DetectionMethod.USER_OVERRIDE,
+                debug_info={"cache_hit": True}
             )
         
-        # Deutsche Analysen sind immer Deutschland
+        # German analyses are always Germany
         if language == "de":
             result = DetectionResult(
                 country="Germany",
                 confidence=1.0,
                 method=DetectionMethod.LANGUAGE_BASED,
-                matched_patterns=["language:german"]
+                matched_patterns=["language:german"],
+                debug_info={"language_detection": True}
             )
             self._cache_result(cache_key, result.country)
             return result
         
-        # Englische Analysen: Pattern-Matching
-        return self._detect_from_english_filename(filename, cache_key)
+        # English analyses: Enhanced Pattern-Matching
+        return self._enhanced_detect_from_english_filename(filename, cache_key)
     
-    def _detect_from_english_filename(self, filename: str, cache_key: str) -> DetectionResult:
-        """Erkennt Land aus englischem Dateinamen"""
-        # Bereinige Dateiname für Analyse
-        clean_filename = self._clean_filename_for_analysis(filename)
+    def _enhanced_detect_from_english_filename(self, filename: str, cache_key: str) -> DetectionResult:
+        """*** ENHANCED *** Erkennt Land aus englischem Dateinamen"""
         
-        # Pattern-Matching
+        # Enhanced filename cleaning
+        clean_filename = self._enhanced_clean_filename(filename)
+        
+        debug_info = {
+            "original_filename": filename,
+            "cleaned_filename": clean_filename,
+            "cleaning_applied": True
+        }
+        
+        # Enhanced Pattern-Matching
         matches = self.database.find_matching_countries(clean_filename)
+        debug_info["total_matches"] = len(matches)
         
         if not matches:
-            # Keine Matches gefunden - User-Input erforderlich
+            # No matches found - user input required
             return DetectionResult(
                 country="Unknown",
                 confidence=0.0,
                 method=DetectionMethod.FALLBACK,
                 requires_user_input=True,
-                alternative_suggestions=self._get_common_countries()
+                alternative_suggestions=self._get_enhanced_common_countries(),
+                debug_info=debug_info
             )
         
-        # Bestes Match prüfen
+        # Best match analysis
         best_country, best_confidence, best_patterns = matches[0]
+        debug_info["best_match"] = {
+            "country": best_country,
+            "confidence": best_confidence,
+            "patterns": best_patterns
+        }
         
+        # *** ENHANCED CONFIDENCE THRESHOLDS ***
         if best_confidence >= CountryDetectionConstants.AUTO_ASSIGN_THRESHOLD:
-            # Hohe Confidence - automatisch zuweisen
+            # High confidence - auto assign
             result = DetectionResult(
                 country=best_country,
                 confidence=best_confidence,
-                method=DetectionMethod.KEYWORD_PATTERN,
-                matched_patterns=best_patterns
+                method=DetectionMethod.EXACT_COUNTRY_NAME if "exact_name" in best_patterns[0] else DetectionMethod.KEYWORD_PATTERN,
+                matched_patterns=best_patterns,
+                debug_info=debug_info
             )
             self._cache_result(cache_key, result.country)
-            self.logger.info(f"Auto-detected {best_country} for {filename} (confidence: {best_confidence:.2f})")
+            self.logger.info(f"Auto-detected {best_country} for {filename} (confidence: {best_confidence:.3f})")
             return result
         
         else:
-            # Niedrige Confidence - User-Input erforderlich
-            suggestions = [country for country, _, _ in matches[:5]]
+            # Low confidence - user input required
+            suggestions = [country for country, _, _ in matches[:8]]  # More suggestions
+            debug_info["requires_user_input"] = True
+            
             return DetectionResult(
                 country=best_country,
                 confidence=best_confidence,
                 method=DetectionMethod.KEYWORD_PATTERN,
                 matched_patterns=best_patterns,
                 requires_user_input=True,
-                alternative_suggestions=suggestions
+                alternative_suggestions=suggestions,
+                debug_info=debug_info
             )
     
-    def _clean_filename_for_analysis(self, filename: str) -> str:
-        """Bereinigt Dateiname für bessere Analyse"""
-        # Entferne Dateiendungen und Timestamps
+    def _enhanced_clean_filename(self, filename: str) -> str:
+        """*** ENHANCED *** Bereinigt Dateiname für bessere Analyse"""
         clean = filename.lower()
+        
+        # Remove common file patterns
         clean = re.sub(r'\.csv$', '', clean)
         clean = re.sub(r'_country_analysis_\d+_\d+$', '', clean)
         clean = re.sub(r'_\d{4}-\d{2}-\d{2}_', '_', clean)
         clean = re.sub(r'_[a-zA-Z0-9]{11}_', '_', clean)  # YouTube IDs
+        clean = re.sub(r'_\d{8,}', '', clean)  # Long numbers
         
-        # Ersetze Unterstriche und Bindestriche durch Leerzeichen
-        clean = re.sub(r'[_-]+', ' ', clean)
+        # *** NEW: Enhanced cleaning ***
+        # Remove common YouTube/social media patterns
+        clean = re.sub(r'_[a-zA-Z0-9\-_]{10,15}', ' ', clean)  # IDs
+        clean = re.sub(r'(mp4|avi|mov|wmv|flv)$', '', clean)  # Video extensions
+        clean = re.sub(r'\b(video|channel|official|hd|full|complete)\b', ' ', clean)  # Common words
+        
+        # Replace separators with spaces
+        clean = re.sub(r'[_\-\.]+', ' ', clean)
+        
+        # Remove extra spaces
+        clean = re.sub(r'\s+', ' ', clean).strip()
         
         return clean
     
-    def _get_common_countries(self) -> List[str]:
-        """Gibt häufige Länder für Vorschläge zurück"""
+    def _get_enhanced_common_countries(self) -> List[str]:
+        """*** ENHANCED *** Gibt häufige Länder für Vorschläge zurück"""
         return [
             "United States", "United Kingdom", "Canada", "Australia", "Germany",
             "France", "Spain", "Italy", "Netherlands", "Sweden", "Norway", "Denmark",
             "India", "Japan", "South Korea", "China", "Malaysia", "Singapore",
-            "Thailand", "Philippines", "Indonesia", "Vietnam", "Brazil", "Mexico"
+            "Thailand", "Philippines", "Indonesia", "Vietnam", "Brazil", "Mexico",
+            "Afghanistan", "Iran", "Iraq", "Turkey", "Israel", "Saudi Arabia",  # *** NEW ***
+            "South Africa", "Nigeria", "Egypt", "Pakistan", "Bangladesh"
         ]
     
     def _cache_result(self, cache_key: str, country: str) -> None:
@@ -687,48 +1074,65 @@ class EnhancedCountryDetector:
         filename: str,
         detection_result: DetectionResult
     ) -> Optional[str]:
-        """Behandelt User-Input für unbekannte Länder
+        """*** ENHANCED *** Behandelt User-Input für unbekannte Länder"""
         
-        Args:
-            filename: Dateiname
-            detection_result: Erkennungsergebnis
-            
-        Returns:
-            Gewähltes Land oder None
-        """
-        st.warning(f"🤔 Land nicht automatisch erkennbar: `{filename}`")
+        st.warning(f"🤔 Country not automatically detected: `{filename}`")
+        
+        # *** ENHANCED: Show debug info ***
+        if detection_result.debug_info:
+            with st.expander("🔍 Detection Details", expanded=False):
+                st.json(detection_result.debug_info)
         
         if detection_result.matched_patterns:
-            st.info(f"**Gefundene Hinweise:** {', '.join(detection_result.matched_patterns)}")
+            st.info(f"**Found clues:** {', '.join(detection_result.matched_patterns)}")
         
-        # User-Auswahl Interface
-        col1, col2 = st.columns([2, 1])
+        # *** ENHANCED: Better UI ***
+        col1, col2 = st.columns([3, 1])
         
         with col1:
             if detection_result.alternative_suggestions:
+                # Show best guess first
+                if detection_result.country != "Unknown":
+                    options = [f"✨ {detection_result.country} (Best Guess)"] + [
+                        country for country in detection_result.alternative_suggestions 
+                        if country != detection_result.country
+                    ]
+                else:
+                    options = detection_result.alternative_suggestions
+                
                 selected_country = st.selectbox(
-                    "Bitte wählen Sie das passende Land:",
-                    options=[""] + detection_result.alternative_suggestions,
-                    key=f"country_select_{filename}"
+                    "Please select the appropriate country:",
+                    options=[""] + options,
+                    key=f"country_select_{filename}",
+                    help="The system found these potential matches based on the filename"
                 )
+                
+                # Clean selection
+                if selected_country.startswith("✨ "):
+                    selected_country = selected_country[2:].split(" (Best Guess)")[0]
+            
             else:
-                all_countries = list(self.database.patterns.keys())
+                # Fallback to all countries
+                all_countries = sorted(list(self.database.patterns.keys()))
                 selected_country = st.selectbox(
-                    "Bitte wählen Sie das passende Land:",
-                    options=[""] + sorted(all_countries),
-                    key=f"country_select_{filename}"
+                    "Please select the appropriate country:",
+                    options=[""] + all_countries,
+                    key=f"country_select_{filename}",
+                    help="No automatic matches found. Please select manually."
                 )
         
         with col2:
-            if st.button("✅ Bestätigen", key=f"confirm_{filename}"):
+            st.write("")  # Spacer
+            st.write("")  # Spacer
+            if st.button("✅ Confirm", key=f"confirm_{filename}"):
                 if selected_country:
-                    # Cache für zukünftige Verwendung
+                    # Cache for future use
                     cache_key = f"{filename}_en"
                     self._cache_result(cache_key, selected_country)
-                    st.success(f"✅ {selected_country} gespeichert für `{filename}`")
+                    st.success(f"✅ {selected_country} saved for `{filename}`")
                     st.rerun()
                 else:
-                    st.error("Bitte wählen Sie ein Land aus")
+                    st.error("Please select a country")
         
         return selected_country if selected_country else None
     
@@ -746,32 +1150,40 @@ class EnhancedCountryDetector:
         st.session_state[CountryDetectionConstants.SESSION_COUNTRY_MAPPING] = {}
         st.session_state[CountryDetectionConstants.SESSION_USER_OVERRIDES] = {}
         self.logger.info("Country detection cache cleared")
+    
+    def get_supported_countries(self) -> List[str]:
+        """*** NEW *** Gibt alle unterstützten Länder zurück"""
+        return sorted(list(self.database.patterns.keys()))
+    
+    def test_filename_detection(self, test_filename: str) -> DetectionResult:
+        """*** NEW *** Test-Funktion für Dateinamen-Erkennung"""
+        return self.detect_country_from_filename(test_filename, "en")
 
 
 # =============================================================================
-# UI COMPONENTS
+# ENHANCED UI COMPONENTS
 # =============================================================================
 
-def render_country_detection_interface(
+def render_enhanced_country_detection_interface(
     analysis_files: List,
     detector: EnhancedCountryDetector
 ) -> Dict[str, str]:
-    """Rendert Interface für Country Detection mit User-Input
+    """*** ENHANCED *** Rendert Interface für Country Detection"""
     
-    Args:
-        analysis_files: Liste der Analysis-Dateien
-        detector: EnhancedCountryDetector Instanz
-        
-    Returns:
-        Dictionary mapping filename -> country
-    """
-    st.subheader("🌍 Länder-Erkennung")
+    st.subheader("🌍 Enhanced Country Detection v2.0")
+    
+    # *** NEW: Show supported countries count ***
+    supported_countries = detector.get_supported_countries()
+    st.success(f"✨ **{len(supported_countries)} countries supported** including Afghanistan, Middle East, and more!")
     
     file_country_mapping = {}
     files_needing_input = []
     
-    # Erste Runde: Automatische Erkennung
-    for file in analysis_files:
+    # Automatic detection round
+    progress_bar = st.progress(0)
+    for i, file in enumerate(analysis_files):
+        progress_bar.progress((i + 1) / len(analysis_files))
+        
         detection_result = detector.detect_country_from_filename(
             file.filename,
             file.language,
@@ -783,20 +1195,24 @@ def render_country_detection_interface(
         else:
             file_country_mapping[file.filename] = detection_result.country
     
-    # Zeige automatisch erkannte Länder
-    if file_country_mapping:
-        st.success(f"✅ {len(file_country_mapping)} Länder automatisch erkannt")
-        
-        with st.expander("🤖 Automatisch erkannte Länder", expanded=False):
-            for filename, country in file_country_mapping.items():
-                st.write(f"📁 `{filename[:50]}...` → 🌍 **{country}**")
+    progress_bar.empty()
     
-    # Behandle Dateien, die User-Input benötigen
+    # Show automatically detected countries
+    if file_country_mapping:
+        st.success(f"✅ {len(file_country_mapping)} countries automatically detected")
+        
+        with st.expander("🤖 Automatically detected countries", expanded=False):
+            for filename, country in file_country_mapping.items():
+                # Show flag emoji if available
+                flag = _get_country_flag(country)
+                st.write(f"📁 `{filename[:60]}...` → {flag} **{country}**")
+    
+    # Handle files needing user input
     if files_needing_input:
-        st.warning(f"⚠️ {len(files_needing_input)} Dateien benötigen manuelle Zuordnung")
+        st.warning(f"⚠️ {len(files_needing_input)} files need manual assignment")
         
         for file, detection_result in files_needing_input:
-            with st.expander(f"🤔 Unbekanntes Land: {file.filename[:50]}...", expanded=True):
+            with st.expander(f"🤔 Unknown country: {file.filename[:60]}...", expanded=True):
                 user_country = detector.handle_user_input_for_unknown_country(
                     file.filename,
                     detection_result
@@ -805,57 +1221,135 @@ def render_country_detection_interface(
                 if user_country:
                     file_country_mapping[file.filename] = user_country
     
-    # Cache-Management
-    col1, col2 = st.columns(2)
+    # *** ENHANCED: Cache management ***
+    st.markdown("---")
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("🔄 Cache neu laden"):
+        if st.button("🔄 Reload cache"):
             st.rerun()
     
     with col2:
-        if st.button("🗑️ Cache löschen"):
+        if st.button("🗑️ Clear cache"):
             detector.clear_cache()
-            st.success("Cache gelöscht")
+            st.success("Cache cleared")
             st.rerun()
     
-    # Statistiken
+    with col3:
+        if st.button("🧪 Test detection"):
+            with st.expander("🧪 Test Country Detection", expanded=True):
+                render_country_detection_debug(detector)
+    
+    # *** ENHANCED: Statistics ***
     if file_country_mapping:
         stats = Counter(file_country_mapping.values())
-        st.subheader("📊 Länder-Verteilung")
+        st.subheader("📊 Country Distribution")
         
-        stats_data = []
-        for country, count in stats.most_common():
-            stats_data.append({"Land": country, "Analysen": count})
+        col1, col2 = st.columns(2)
         
-        import pandas as pd
-        stats_df = pd.DataFrame(stats_data)
-        st.dataframe(stats_df, use_container_width=True)
+        with col1:
+            stats_data = []
+            for country, count in stats.most_common():
+                flag = _get_country_flag(country)
+                stats_data.append({"Country": f"{flag} {country}", "Analyses": count})
+            
+            import pandas as pd
+            stats_df = pd.DataFrame(stats_data)
+            st.dataframe(stats_df, use_container_width=True)
+        
+        with col2:
+            st.write("**🎯 Detection Summary:**")
+            st.metric("Total Countries", len(stats))
+            st.metric("Total Analyses", sum(stats.values()))
+            st.metric("Most Active", f"{stats.most_common(1)[0][0]} ({stats.most_common(1)[0][1]})")
+            
+            # Detection quality
+            auto_detected = len(file_country_mapping)
+            total_files = len(analysis_files)
+            detection_rate = (auto_detected / total_files) * 100 if total_files > 0 else 0
+            st.metric("Auto-Detection Rate", f"{detection_rate:.1f}%")
     
     return file_country_mapping
 
 
 def render_country_detection_debug(detector: EnhancedCountryDetector) -> None:
-    """Rendert Debug-Interface für Country Detection"""
-    with st.expander("🔧 Country Detection Debug", expanded=False):
-        st.subheader("Test Country Detection")
-        
+    """*** ENHANCED *** Debug interface für Country Detection"""
+    
+    st.subheader("🔧 Enhanced Country Detection Testing")
+    
+    # Test different filename patterns
+    test_examples = [
+        "Why_Malaysia_Education_System_Is_A_Failure",
+        "What women in Afghanistan want you to know _ Start Here",
+        "Germany vs France Football Discussion",
+        "India Tech Industry Analysis 2024",
+        "Random_Video_Title_No_Country_Here",
+        "BBC_News_United_Kingdom_Brexit_Update",
+        "CNN_USA_Politics_Discussion"
+    ]
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**🧪 Test Custom Filename:**")
         test_filename = st.text_input(
-            "Test Dateiname:",
-            value="Why_Malaysia_Education_System_Is_A_Failure"
+            "Enter filename to test:",
+            value="What women in Afghanistan want you to know _ Start Here"
         )
         
         if test_filename:
-            result = detector.detect_country_from_filename(test_filename, "en")
+            result = detector.test_filename_detection(test_filename)
             
-            st.write("**Erkennungsergebnis:**")
-            st.json({
+            st.write("**🎯 Detection Result:**")
+            
+            # Result summary
+            confidence_color = "🟢" if result.confidence >= 0.7 else "🟡" if result.confidence >= 0.4 else "🔴"
+            st.info(f"{confidence_color} **{result.country}** (Confidence: {result.confidence:.2f})")
+            
+            # Detailed results
+            result_data = {
                 "country": result.country,
-                "confidence": result.confidence,
+                "confidence": f"{result.confidence:.3f}",
                 "method": result.method.value,
                 "matched_patterns": result.matched_patterns,
                 "requires_user_input": result.requires_user_input,
-                "suggestions": result.alternative_suggestions
-            })
+                "suggestions": result.alternative_suggestions,
+                "debug_info": result.debug_info
+            }
+            
+            st.json(result_data)
+    
+    with col2:
+        st.write("**📝 Test Example Filenames:**")
+        
+        for example in test_examples:
+            if st.button(f"Test: {example[:30]}...", key=f"test_{example}"):
+                result = detector.test_filename_detection(example)
+                confidence_emoji = "✅" if result.confidence >= 0.7 else "⚠️" if result.confidence >= 0.4 else "❌"
+                st.write(f"{confidence_emoji} **{result.country}** ({result.confidence:.2f})")
+
+
+def _get_country_flag(country: str) -> str:
+    """*** NEW *** Gibt Flag-Emoji für Land zurück"""
+    flag_map = {
+        "Germany": "🇩🇪", "Austria": "🇦🇹", "Switzerland": "🇨🇭",
+        "United States": "🇺🇸", "Canada": "🇨🇦", "United Kingdom": "🇬🇧",
+        "Ireland": "🇮🇪", "Australia": "🇦🇺", "New Zealand": "🇳🇿",
+        "India": "🇮🇳", "Pakistan": "🇵🇰", "Bangladesh": "🇧🇩", "Sri Lanka": "🇱🇰",
+        "Afghanistan": "🇦🇫", "Iran": "🇮🇷", "Iraq": "🇮🇶", "Saudi Arabia": "🇸🇦",
+        "Turkey": "🇹🇷", "Israel": "🇮🇱", "Lebanon": "🇱🇧", "Syria": "🇸🇾",
+        "Jordan": "🇯🇴", "UAE": "🇦🇪", "China": "🇨🇳", "Japan": "🇯🇵",
+        "South Korea": "🇰🇷", "North Korea": "🇰🇵", "Thailand": "🇹🇭",
+        "Vietnam": "🇻🇳", "Philippines": "🇵🇭", "Indonesia": "🇮🇩",
+        "Malaysia": "🇲🇾", "Singapore": "🇸🇬", "Myanmar": "🇲🇲",
+        "France": "🇫🇷", "Spain": "🇪🇸", "Italy": "🇮🇹", "Netherlands": "🇳🇱",
+        "Poland": "🇵🇱", "Sweden": "🇸🇪", "Norway": "🇳🇴", "Denmark": "🇩🇰",
+        "Finland": "🇫🇮", "Belgium": "🇧🇪", "Portugal": "🇵🇹", "Greece": "🇬🇷",
+        "Russia": "🇷🇺", "Ukraine": "🇺🇦", "Belarus": "🇧🇾", "Brazil": "🇧🇷",
+        "Mexico": "🇲🇽", "Argentina": "🇦🇷", "Colombia": "🇨🇴", "Chile": "🇨🇱",
+        "South Africa": "🇿🇦", "Nigeria": "🇳🇬", "Egypt": "🇪🇬", "Kenya": "🇰🇪"
+    }
+    return flag_map.get(country, "🌍")
 
 
 # =============================================================================
@@ -863,7 +1357,7 @@ def render_country_detection_debug(detector: EnhancedCountryDetector) -> None:
 # =============================================================================
 
 def create_enhanced_country_detector() -> EnhancedCountryDetector:
-    """Factory-Funktion für EnhancedCountryDetector"""
+    """Factory-Funktion für EnhancedCountryDetector v2.0"""
     return EnhancedCountryDetector()
 
 
@@ -872,16 +1366,7 @@ def detect_country_from_analysis_file(
     language: str = "en",
     detector: Optional[EnhancedCountryDetector] = None
 ) -> DetectionResult:
-    """Convenience-Funktion für Country Detection
-    
-    Args:
-        filename: Dateiname
-        language: Sprache (de/en)
-        detector: Optionaler Detector (wird erstellt falls None)
-        
-    Returns:
-        DetectionResult
-    """
+    """*** ENHANCED *** Convenience-Funktion für Country Detection"""
     if detector is None:
         detector = create_enhanced_country_detector()
     
@@ -895,7 +1380,7 @@ def detect_country_from_analysis_file(
 __all__ = [
     # Main Classes
     'EnhancedCountryDetector',
-    'CountryPatternsDatabase',
+    'EnhancedCountryPatternsDatabase',
     
     # Data Models
     'CountryPattern',
@@ -905,7 +1390,7 @@ __all__ = [
     'DetectionMethod',
     
     # UI Functions
-    'render_country_detection_interface',
+    'render_enhanced_country_detection_interface',
     'render_country_detection_debug',
     
     # Factory Functions

@@ -72,69 +72,48 @@ section[data-testid="stSidebar"] > div:first-child {
 # ===== CSS STYLING =====
 st.markdown("""
 <style>
-/* Professional UN/UNESCO Styling */
-.copyright-footer {
-    margin-top: 50px;
-    padding: 25px 20px;
-    border-top: 2px solid #FF6B98;
-    text-align: center;
-    color: #666666;
-    font-size: 0.9rem;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-}
-.author-name {
-    color: #FF6B98;
-    font-weight: 600;
-}
-.app-title {
-    color: #FF6B98;
-    font-weight: 500;
-}
-
-/* UN/UNESCO Professional Styling */
-.un-blue {
-    color: #009edb;
-    font-weight: 600;
-}
-.unesco-orange {
-    color: #ed6a37;
-    font-weight: 600;
-}
-.sdg-hero {
-    background: linear-gradient(135deg, #009edb, #ed6a37);
+/* Interactive Data Science Styling */
+.hero-stats {
+    background: linear-gradient(135deg, #2E86AB, #A23B72);
     color: white;
-    padding: 25px;
+    padding: 30px;
     border-radius: 15px;
     margin: 20px 0;
     text-align: center;
 }
-.methodology-highlight {
+.tech-card {
     background: #f8f9fa;
-    border-left: 4px solid #009edb;
+    border-left: 4px solid #2E86AB;
     padding: 20px;
     margin: 15px 0;
-    border-radius: 5px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.global-framework {
-    background: linear-gradient(45deg, #e8f4fd, #fef2ee);
-    padding: 25px;
-    border-radius: 15px;
-    border: 2px solid #009edb;
-    margin: 20px 0;
-}
-.impact-grid {
+.achievement-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
     margin: 20px 0;
 }
-.impact-card {
+.achievement-card {
     background: white;
     padding: 20px;
     border-radius: 12px;
-    border-left: 4px solid #ed6a37;
+    border-left: 4px solid #A23B72;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.model-specs {
+    background: #e8f4fd;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #2E86AB;
+    margin: 15px 0;
+}
+.pipeline-flow {
+    background: linear-gradient(45deg, #f8f9fa, #e8f4fd);
+    padding: 25px;
+    border-radius: 15px;
+    margin: 20px 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -162,461 +141,470 @@ saved_results_dir.mkdir(exist_ok=True, parents=True)
 # ===== HAUPTINHALT =====
 st.title(f"🌟 {t('app_title')}")
 
-# SDG 4 Hero Section - Global Focus
+# Hero Section - Honest Technical Achievement
 if st.session_state.language == "DE":
     st.markdown("""
-    <div class="sdg-hero">
-    <h2>🎯 UN SDG 4: Skalierbare Educational Equity Analytics</h2>
-    <p><strong>Evidenzbasierte Policy Intelligence für internationale Entwicklungsorganisationen</strong></p>
-    <p><em>Transferable Framework • Global Applicability • Cultural Adaptability</em></p>
+    <div class="hero-stats">
+    <h2>🚀 Interactive Multi-Language NLP Pipeline</h2>
+    <p><strong>YouTube → UNESCO Data: 7-Module Data Science System</strong></p>
+    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+        <div><h3>50+</h3><p>Countries Auto-Detected</p></div>
+        <div><h3>196</h3><p>UNESCO Countries</p></div>
+        <div><h3>7</h3><p>Interactive Apps</p></div>
+        <div><h3>6</h3><p>ML Models Deployed</p></div>
     </div>
-    """, unsafe_allow_html=True)
-    
-    # Global Methodology Description
-    st.markdown(f"""
-    ### {t('app_subtitle')}
-    
-    **HerEducation** ist ein **übertragbares analytisches Framework**, das <span class="un-blue">UNESCO-Bildungsdaten</span> 
-    mit <span class="unesco-orange">Social Media Discourse Analysis</span> kombiniert, um **datengestützte Politikempfehlungen** 
-    für internationale Entwicklungsorganisationen zu generieren.
-    
-    ### {t('app_description')}
-    
-    Die Plattform wurde entwickelt, um **in jedem Land und kulturellen Kontext** anwendbar zu sein - von Südostasien bis Afrika, 
-    von entwickelten bis zu sich entwickelnden Volkswirtschaften.
-    """, unsafe_allow_html=True)
-    
-else:
-    st.markdown("""
-    <div class="sdg-hero">
-    <h2>🎯 UN SDG 4: Scalable Educational Equity Analytics</h2>
-    <p><strong>Evidence-based Policy Intelligence for International Development Organizations</strong></p>
-    <p><em>Transferable Framework • Global Applicability • Cultural Adaptability</em></p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown(f"""
     ### {t('app_subtitle')}
     
-    **HerEducation** is a **transferable analytical framework** that combines <span class="un-blue">UNESCO education data</span> 
-    with <span class="unesco-orange">Social Media Discourse Analysis</span> to generate **data-driven policy recommendations** 
-    for international development organizations.
+    **HerEducation** ist ein **funktionsfähiges 7-Module-Data-Science-System**, das **YouTube-Kommentare** 
+    in **UNESCO-kompatible Policy Intelligence** transformiert. **Interactive processing** von sozialen Medien 
+    für **evidenzbasierte Bildungspolitik**.
     
     ### {t('app_description')}
     
-    The platform was designed to be **applicable in any country and cultural context** - from Southeast Asia to Africa, 
-    from developed to developing economies.
+    **Interactive ML-Pipeline** mit **automatischer Ländererkennung für 50+ Länder**, 
+    **on-demand Whisper-Audio-Transkription** und **Cross-Country-Discourse-Analysis**.
+    """, unsafe_allow_html=True)
+    
+else:
+    st.markdown("""
+    <div class="hero-stats">
+    <h2>🚀 Interactive Multi-Language NLP Pipeline</h2>
+    <p><strong>YouTube → UNESCO Data: 7-Module Data Science System</strong></p>
+    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+        <div><h3>50+</h3><p>Countries Auto-Detected</p></div>
+        <div><h3>196</h3><p>UNESCO Countries</p></div>
+        <div><h3>7</h3><p>Interactive Apps</p></div>
+        <div><h3>6</h3><p>ML Models Deployed</p></div>
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    ### {t('app_subtitle')}
+    
+    **HerEducation** is a **functional 7-module data science system** that transforms **YouTube comments** 
+    into **UNESCO-compatible policy intelligence**. **Interactive processing** of social media 
+    for **evidence-based education policy**.
+    
+    ### {t('app_description')}
+    
+    **Interactive ML pipeline** with **automatic country detection for 50+ countries**, 
+    **on-demand Whisper audio transcription** and **cross-country discourse analysis**.
     """, unsafe_allow_html=True)
 
-# ===== GLOBAL APPLICABILITY SECTION =====
+# ===== CORE TECHNICAL ACHIEVEMENTS =====
 if st.session_state.language == "DE":
     st.markdown("""
-    <div class="global-framework">
-    <h3>🌍 Globale Anwendbarkeit & Cross-Cultural Adaptability</h3>
+    <div class="pipeline-flow">
+    <h3>🔧 Interactive Data Science Pipeline - What It Actually Does</h3>
     
-    <div class="methodology-highlight">
-    <h4>📊 Bewährte Methodik - Aktuell implementiert:</h4>
-    <strong>Schritt 1:</strong> UNESCO-Bildungsdaten-Integration (verfügbar für 196 Länder)<br>
-    <strong>Schritt 2:</strong> YouTube Comment Analysis (Deutsch/Englisch)<br>
-    <strong>Schritt 3:</strong> NLP-Modellierung (Sentiment, Emotion, Topics)<br>
-    <strong>Schritt 4:</strong> Cross-Country Data Comparison<br>
-    <strong>Schritt 5:</strong> Manual Analysis & Reporting
+    <div class="tech-card">
+    <h4>🎥 YouTube Intelligence System</h4>
+    <strong>Manual Implementation:</strong> yt-dlp Integration → OpenAI Whisper Transcription → Comment Extraction<br>
+    <strong>Input:</strong> YouTube URL or search terms (user-initiated)<br>
+    <strong>Output:</strong> Transcribed audio + extracted comments → ready for NLP analysis<br>
+    <strong>Formats:</strong> MP3, WAV, M4A support with 25MB limit (on-demand processing)
     </div>
     
-    <div class="impact-grid">
-    <div class="impact-card">
-    <h4>🌍 Global YouTube Analysis</h4>
-    <strong>Sprachen:</strong> Deutsch, Englisch (andere gefiltert)<br>
-    <strong>Länder:</strong> Alle mit DE/EN YouTube-Kommentaren<br>
-    <strong>Analyse:</strong> Sentiment, Emotion, Topics zu Bildung
+    <div class="tech-card">
+    <h4>🧠 Multi-Language NLP Processing</h4>
+    <strong>German:</strong> oliverguhr/german-sentiment-bert + RoBERTa emotion detection<br>
+    <strong>English:</strong> cardiffnlp/twitter-roberta + j-hartmann/emotion-english-distilroberta<br>
+    <strong>Topics:</strong> BERTopic with distiluse-base-multilingual-cased-v1 embeddings<br>
+    <strong>Processing:</strong> Batch processing ~1000 comments/session with confidence scoring
     </div>
     
-    <div class="impact-card">
-    <h4>🎯 Themen-Extraktion</h4>
-    <strong>Topics:</strong> Automatische Erkennung von Diskussionsthemen<br>
-    <strong>Emotions:</strong> 6-Emotion-Analyse (Freude, Wut, Trauer, etc.)<br>
-    <strong>Search:</strong> Suche nach spezifischen Begriffen (z.B. "Stolz")
+    <div class="tech-card">
+    <h4>🌍 Global Discourse Analysis</h4>
+    <strong>Auto-Detection:</strong> 50+ countries from filename patterns<br>
+    <strong>Visualization:</strong> PyDeck 3D world maps with sentiment overlays<br>
+    <strong>Analytics:</strong> Cross-country topic similarity matrices + emotion heatmaps<br>
+    <strong>Export:</strong> CSV/JSON for downstream analysis (session-based)
     </div>
     
-    <div class="impact-card">
-    <h4>📊 UNESCO Integration</h4>
-    <strong>Data:</strong> 196 Länder Bildungspolitik-Daten<br>
-    <strong>Analysis:</strong> Gender Gaps, Policy Comparison<br>
-    <strong>Visualisierung:</strong> Interactive Dashboards
-    </div>
-    
-    <div class="impact-card">
-    <h4>🔄 Potenzial für Erweiterung</h4>
-    <strong>Mehr Sprachen:</strong> NLP-Pipeline erweiterbar<br>
-    <strong>Mehr Plattformen:</strong> Facebook, Twitter möglich<br>
-    <strong>Automation:</strong> Batch-Processing implementierbar
-    </div>
+    <div class="tech-card">
+    <h4>📊 UNESCO Data Integration</h4>
+    <strong>Coverage:</strong> All 196 UN member countries education indicators<br>
+    <strong>Time Series:</strong> Static database 2019-2025 (manually updateable)<br>
+    <strong>Analysis:</strong> Interactive Plotly dashboards + country rankings<br>
+    <strong>Standards:</strong> SDG 4.1-4.7 compliant reporting
     </div>
     </div>
     """, unsafe_allow_html=True)
 else:
     st.markdown("""
-    <div class="global-framework">
-    <h3>🌍 Global Applicability & Cross-Cultural Adaptability</h3>
+    <div class="pipeline-flow">
+    <h3>🔧 Interactive Data Science Pipeline - What It Actually Does</h3>
     
-    <div class="methodology-highlight">
-    <h4>📊 Proven Methodology - Currently Implemented:</h4>
-    <strong>Step 1:</strong> UNESCO Education Data Integration (available for 196 countries)<br>
-    <strong>Step 2:</strong> YouTube Comment Analysis (German/English)<br>
-    <strong>Step 3:</strong> NLP Modeling (Sentiment, Emotion, Topics)<br>
-    <strong>Step 4:</strong> Cross-Country Data Comparison<br>
-    <strong>Step 5:</strong> Manual Analysis & Reporting
+    <div class="tech-card">
+    <h4>🎥 YouTube Intelligence System</h4>
+    <strong>Manual Implementation:</strong> yt-dlp Integration → OpenAI Whisper Transcription → Comment Extraction<br>
+    <strong>Input:</strong> YouTube URL or search terms (user-initiated)<br>
+    <strong>Output:</strong> Transcribed audio + extracted comments → ready for NLP analysis<br>
+    <strong>Formats:</strong> MP3, WAV, M4A support with 25MB limit (on-demand processing)
     </div>
     
-    <div class="impact-grid">
-    <div class="impact-card">
-    <h4>🌍 Global YouTube Analysis</h4>
-    <strong>Languages:</strong> German, English (others filtered)<br>
-    <strong>Countries:</strong> All with DE/EN YouTube comments<br>
-    <strong>Analysis:</strong> Sentiment, emotion, topics on education
+    <div class="tech-card">
+    <h4>🧠 Multi-Language NLP Processing</h4>
+    <strong>German:</strong> oliverguhr/german-sentiment-bert + RoBERTa emotion detection<br>
+    <strong>English:</strong> cardiffnlp/twitter-roberta + j-hartmann/emotion-english-distilroberta<br>
+    <strong>Topics:</strong> BERTopic with distiluse-base-multilingual-cased-v1 embeddings<br>
+    <strong>Processing:</strong> Batch processing ~1000 comments/session with confidence scoring
     </div>
     
-    <div class="impact-card">
-    <h4>🎯 Topic Extraction</h4>
-    <strong>Topics:</strong> Automatic recognition of discussion themes<br>
-    <strong>Emotions:</strong> 6-emotion analysis (joy, anger, sadness, etc.)<br>
-    <strong>Search:</strong> Search for specific terms (e.g. "pride")
+    <div class="tech-card">
+    <h4>🌍 Global Discourse Analysis</h4>
+    <strong>Auto-Detection:</strong> 50+ countries from filename patterns<br>
+    <strong>Visualization:</strong> PyDeck 3D world maps with sentiment overlays<br>
+    <strong>Analytics:</strong> Cross-country topic similarity matrices + emotion heatmaps<br>
+    <strong>Export:</strong> CSV/JSON for downstream analysis (session-based)
     </div>
     
-    <div class="impact-card">
-    <h4>📊 UNESCO Integration</h4>
-    <strong>Data:</strong> 196 countries education policy data<br>
-    <strong>Analysis:</strong> Gender gaps, policy comparison<br>
-    <strong>Visualization:</strong> Interactive dashboards
-    </div>
-    
-    <div class="impact-card">
-    <h4>🔄 Potential for Extension</h4>
-    <strong>More Languages:</strong> NLP pipeline expandable<br>
-    <strong>More Platforms:</strong> Facebook, Twitter possible<br>
-    <strong>Automation:</strong> Batch processing implementable
-    </div>
+    <div class="tech-card">
+    <h4>📊 UNESCO Data Integration</h4>
+    <strong>Coverage:</strong> All 196 UN member countries education indicators<br>
+    <strong>Time Series:</strong> Static database 2019-2025 (manually updateable)<br>
+    <strong>Analysis:</strong> Interactive Plotly dashboards + country rankings<br>
+    <strong>Standards:</strong> SDG 4.1-4.7 compliant reporting
     </div>
     </div>
     """, unsafe_allow_html=True)
 
-# ===== PROJEKTSTRUKTUR =====
-with st.expander(f"📋 {t('project_structure')}" if st.session_state.language == "DE" else "📋 Comprehensive Technical Architecture"):
+# ===== 7-MODULE SYSTEM =====
+if st.session_state.language == "DE":
+    st.markdown("""
+    <div class="achievement-grid">
+    <div class="achievement-card">
+    <h4>📖 01_Projektidee.py</h4>
+    <strong>Function:</strong> Interactive storytelling about methodology<br>
+    <strong>Features:</strong> 8 themed tabs, bilingual support, language switcher<br>
+    <strong>Tech:</strong> Streamlit multipage with custom CSS + i18n
+    </div>
+    
+    <div class="achievement-card">
+    <h4>🗺️ 02_UNESCO_Dashboard.py</h4>
+    <strong>Function:</strong> Interactive world maps for 196 countries<br>
+    <strong>Features:</strong> Static education indicators, country comparison, language switcher<br>
+    <strong>Tech:</strong> PyDeck visualization + Plotly charts + i18n
+    </div>
+    
+    <div class="achievement-card">
+    <h4>📈 03_Indicators_Development.py</h4>
+    <strong>Function:</strong> Educational progress tracking 2019-2025<br>
+    <strong>Features:</strong> Country rankings, regional analysis, language switcher<br>
+    <strong>Tech:</strong> Time series analysis + statistical modeling + i18n
+    </div>
+    
+    <div class="achievement-card">
+    <h4>🎬 04_YouTube_Analyzer.py</h4>
+    <strong>Function:</strong> Manual video search + audio transcription<br>
+    <strong>Features:</strong> On-demand yt-dlp download + Whisper processing<br>
+    <strong>Tech:</strong> OpenAI Whisper + comment extraction API
+    </div>
+    
+    <div class="achievement-card">
+    <h4>💬 05_Kommentaranalyse_deutsch.py</h4>
+    <strong>Function:</strong> German NLP analysis pipeline<br>
+    <strong>Features:</strong> Interactive sentiment + emotion + topics + special analysis<br>
+    <strong>Tech:</strong> BERT + RoBERTa + BERTopic + WordClouds
+    </div>
+    
+    <div class="achievement-card">
+    <h4>💬 06_Comment_Analysis_english.py</h4>
+    <strong>Function:</strong> English NLP analysis pipeline<br>
+    <strong>Features:</strong> Interactive sentiment + emotion + topic modeling<br>
+    <strong>Tech:</strong> DistilRoBERTa + ensemble methods + validation
+    </div>
+    
+    <div class="achievement-card">
+    <h4>🌍 07_Globale_Diskurs_Analysis.py</h4>
+    <strong>Function:</strong> Cross-country comparison system<br>
+    <strong>Features:</strong> 50+ country auto-detection + similarity matrices<br>
+    <strong>Tech:</strong> Geographic NLP + statistical correlation analysis
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <div class="achievement-grid">
+    <div class="achievement-card">
+    <h4>📖 01_Project_Concept.py</h4>
+    <strong>Function:</strong> Interactive storytelling about methodology<br>
+    <strong>Features:</strong> 8 themed tabs, bilingual support, language switcher<br>
+    <strong>Tech:</strong> Streamlit multipage with custom CSS + i18n
+    </div>
+    
+    <div class="achievement-card">
+    <h4>🗺️ 02_UNESCO_Dashboard.py</h4>
+    <strong>Function:</strong> Interactive world maps for 196 countries<br>
+    <strong>Features:</strong> Static education indicators, country comparison, language switcher<br>
+    <strong>Tech:</strong> PyDeck visualization + Plotly charts + i18n
+    </div>
+    
+    <div class="achievement-card">
+    <h4>📈 03_Indicators_Development.py</h4>
+    <strong>Function:</strong> Educational progress tracking 2019-2025<br>
+    <strong>Features:</strong> Country rankings, regional analysis, language switcher<br>
+    <strong>Tech:</strong> Time series analysis + statistical modeling + i18n
+    </div>
+    
+    <div class="achievement-card">
+    <h4>🎬 04_YouTube_Analyzer.py</h4>
+    <strong>Function:</strong> Manual video search + audio transcription<br>
+    <strong>Features:</strong> On-demand yt-dlp download + Whisper processing<br>
+    <strong>Tech:</strong> OpenAI Whisper + comment extraction API
+    </div>
+    
+    <div class="achievement-card">
+    <h4>💬 05_German_NLP_Analysis.py</h4>
+    <strong>Function:</strong> German NLP analysis pipeline<br>
+    <strong>Features:</strong> Interactive sentiment + emotion + topics + special analysis<br>
+    <strong>Tech:</strong> BERT + RoBERTa + BERTopic + WordClouds
+    </div>
+    
+    <div class="achievement-card">
+    <h4>💬 06_English_NLP_Analysis.py</h4>
+    <strong>Function:</strong> English NLP analysis pipeline<br>
+    <strong>Features:</strong> Interactive sentiment + emotion + topic modeling<br>
+    <strong>Tech:</strong> DistilRoBERTa + ensemble methods + validation
+    </div>
+    
+    <div class="achievement-card">
+    <h4>🌍 07_Global_Discourse_Analysis.py</h4>
+    <strong>Function:</strong> Cross-country comparison system<br>
+    <strong>Features:</strong> 50+ country auto-detection + similarity matrices<br>
+    <strong>Tech:</strong> Geographic NLP + statistical correlation analysis
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ===== TECHNICAL ARCHITECTURE =====
+with st.expander(f"🔧 Interactive Architecture & Dependencies" if st.session_state.language == "EN" else "🔧 Interaktive Architektur & Dependencies"):
     if st.session_state.language == "DE":
         st.markdown("""
-        ```
-        HerEducation/ (Global Educational Equity Framework)
-        ├── main.py                     # Haupteinstiegspunkt der Streamlit-App
-        ├── requirements.txt            # Production-ready Python dependencies
-        ├── README.md                   # Comprehensive Documentation (10+ KB)
-        ├── LICENSE                     # Open Source License
-        ├── pages/                      # Multi-Country Analysis Modules
-        │   ├── __init__.py            # Page system initialization
-        │   ├── 01_Projektidee.py       # Global Methodology & Concept
-        │   ├── 02_HerAtlas_UNESCO_Dashboard.py  # UNESCO Data (196 countries)
-        │   ├── 03_HerAtlas_Indicators_Development.py # Time series analysis
-        │   ├── 04_YouTube_Analyzer.py  # Social Media Intelligence Tools
-        │   ├── 05_Kommentaranalyse_deutsch.py # German NLP Analysis
-        │   ├── 06_Comment_Analysis_english.py # English NLP Analysis
-        │   └── 07_Globale_Diskurs_Analyse.py  # Cross-Country Comparisons
-        ├── models/                     # Scalable ML Architecture
-        │   ├── model_loader.py         # German language models
-        │   └── model_loader_english.py # English language models
-        ├── utils/                      # Comprehensive Utility Library (50+ modules)
-        │   ├── __init__.py
-        │   ├── language_switcher_config.py    # Multi-language system
-        │   ├── language_switcher_ui.py        # Language UI components
-        │   ├── shared_components.py           # Reusable UI components
-        │   ├── data_loader.py                 # UNESCO data integration
-        │   ├── youtube_downloader.py          # YouTube-specific tools
-        │   ├── sentiment_analysis*.py         # Sentiment analysis (DE/EN)
-        │   ├── emotion_analysis*.py           # Emotion detection (DE/EN)
-        │   ├── topic_analysis*.py             # Topic modeling (DE/EN)
-        │   ├── global_discourse_*.py          # Cross-country analysis tools
-        │   ├── visualizations.py              # Chart & graph utilities
-        │   └── ... (40+ additional specialized modules)
-        ├── data/                       # Global Data Infrastructure
-        │   ├── unesco_global/          # UNESCO datasets (196 countries)
-        │   ├── social_media/           # Platform-specific data
-        │   ├── cultural_contexts/      # Country adaptation configs
-        │   └── analysis_results/       # Processed insights
-        ├── saved_results/              # Country-specific Analysis Archives
-        └── deployment/                 # UN/International deployment configs
-        ```
+        <div class="model-specs">
+        <h4>🧠 Deployed ML Models (Interactive Processing)</h4>
         
-        **🔧 Technische Highlights:**
-        - **50+ spezialisierte Utils** für skalierbare Analyse
-        - **Multi-Language NLP Pipeline** (Deutsch, Englisch, erweiterbar)
-        - **UNESCO API Integration** für Real-time Daten
-        - **Cultural Context Adapters** für verschiedene Länder
-        - **Automated Reporting** für UN/World Bank Standards
+        <strong>German Language Processing:</strong><br>
+        • <strong>Sentiment:</strong> oliverguhr/german-sentiment-bert (110M parameters)<br>
+        • <strong>Emotion:</strong> visegradmedia-emotion/Emotion_RoBERTa_german6_v7 (125M parameters)<br>
+        • <strong>Preprocessing:</strong> German stopwords + custom tokenization<br><br>
+        
+        <strong>English Language Processing:</strong><br>
+        • <strong>Sentiment:</strong> cardiffnlp/twitter-roberta-base-sentiment-latest<br>
+        • <strong>Emotion:</strong> j-hartmann/emotion-english-distilroberta-base<br>
+        • <strong>Topic Modeling:</strong> BERTopic + all-MiniLM-L6-v2 embeddings<br><br>
+        
+        <strong>Audio & Video Processing:</strong><br>
+        • <strong>Download:</strong> yt-dlp (manual YouTube processing, multiple formats)<br>
+        • <strong>Transcription:</strong> OpenAI Whisper (on-demand: tiny, base, small, medium, large)<br>
+        • <strong>Comment Extraction:</strong> Custom API integration<br><br>
+        
+        <strong>Visualization & Mapping:</strong><br>
+        • <strong>3D Maps:</strong> PyDeck with geographical sentiment overlays<br>
+        • <strong>Charts:</strong> Plotly interactive dashboards<br>
+        • <strong>Word Clouds:</strong> Custom styling with confidence filtering
+        </div>
+        
+        ```python
+        # Core Technology Stack (requirements.txt)
+        streamlit>=1.28.0
+        transformers>=4.30.0
+        torch>=2.0.0
+        bertopic>=0.15.0
+        sentence-transformers>=2.2.0
+        plotly>=5.15.0
+        pydeck>=0.8.0
+        yt-dlp>=2023.7.6
+        openai-whisper>=20230314
+        pandas>=2.0.0
+        numpy>=1.24.0
+        scikit-learn>=1.3.0
+        hdbscan>=0.8.29
+        umap-learn>=0.5.3
+        wordcloud>=1.9.2
+        langdetect>=1.0.9
+        
+        # File Structure (50+ specialized modules)
+        HerEducation/
+        ├── main.py                     # Multi-page app entry point
+        ├── pages/                      # 7 interactive apps
+        │   ├── 01_Projektidee.py
+        │   ├── 02_HerAtlas_UNESCO_Dashboard.py
+        │   ├── 03_HerAtlas_Indicators_Development.py
+        │   ├── 04_YouTube_Analyzer.py
+        │   ├── 05_Kommentaranalyse_deutsch.py
+        │   ├── 06_Comment_Analysis_english.py
+        │   └── 07_Globale_Diskurs_Analyse.py
+        ├── models/                     # ML model management
+        │   ├── model_loader_german.py
+        │   └── model_loader_english.py
+        ├── utils/                      # 50+ utility modules
+        │   ├── sentiment_analysis_german.py
+        │   ├── emotion_analysis_german.py
+        │   ├── topic_analysis_german.py
+        │   ├── sentiment_analysis_english.py
+        │   ├── emotion_analysis_english.py
+        │   ├── topic_analysis_english.py
+        │   ├── global_discourse_country_detector.py
+        │   ├── youtube_downloader.py
+        │   ├── data_loader.py
+        │   └── ... (40+ more specialized modules)
+        ├── data/                       # UNESCO static datasets
+        └── saved_results/              # Session-based analysis persistence
+        ```
         """)
     else:
         st.markdown("""
-        ```
-        HerEducation/ (Global Educational Equity Framework)
-        ├── main.py                     # Main Streamlit application entry point
-        ├── requirements.txt            # Production-ready Python dependencies
-        ├── README.md                   # Comprehensive Documentation (10+ KB)
-        ├── LICENSE                     # Open Source License
-        ├── pages/                      # Multi-Country Analysis Modules
-        │   ├── __init__.py            # Page system initialization
-        │   ├── 01_Project_Concept.py   # Global Methodology & Framework
-        │   ├── 02_UNESCO_Dashboard.py  # UNESCO Data (196 countries)
-        │   ├── 03_Indicators_Development.py # Time series analysis
-        │   ├── 04_Social_Media_Analyzer.py # Social Media Intelligence
-        │   ├── 05_NLP_Analysis_German.py # German language analysis
-        │   ├── 06_NLP_Analysis_English.py # English language analysis
-        │   └── 07_Global_Discourse_Analysis.py # Cross-country comparisons
-        ├── models/                     # Scalable ML Architecture
-        │   ├── model_loader.py         # Language model management
-        │   └── model_adapters/         # Cultural adaptation modules
-        ├── utils/                      # Comprehensive Utility Library (50+ modules)
-        │   ├── __init__.py
-        │   ├── language_switcher_*.py          # Multi-language system
-        │   ├── shared_components.py            # Reusable UI components
-        │   ├── data_loader.py                  # UNESCO data integration
-        │   ├── social_media_extractors.py      # Platform-specific tools
-        │   ├── nlp_pipeline_*.py              # Language-specific NLP
-        │   ├── cultural_adapters.py            # Cross-cultural analysis
-        │   ├── policy_generators.py            # Automated recommendations
-        │   ├── visualization_suite.py          # Interactive dashboards
-        │   └── ... (40+ specialized modules for global deployment)
-        ├── data/                       # Global Data Infrastructure
-        │   ├── unesco_global/          # UNESCO datasets (196 countries)
-        │   ├── social_media/           # Platform-specific data
-        │   ├── cultural_contexts/      # Country adaptation configs
-        │   └── analysis_results/       # Processed insights
-        ├── saved_results/              # Country-specific Analysis Archives
-        └── deployment/                 # UN/International deployment configs
-        ```
+        <div class="model-specs">
+        <h4>🧠 Deployed ML Models (Interactive Processing)</h4>
         
-        **🔧 Technical Highlights:**
-        - **50+ specialized utils** for scalable analysis
-        - **Multi-language NLP pipeline** (German, English, expandable)
-        - **UNESCO API integration** for real-time data
-        - **Cultural context adapters** for different countries
-        - **Automated reporting** for UN/World Bank standards
+        <strong>German Language Processing:</strong><br>
+        • <strong>Sentiment:</strong> oliverguhr/german-sentiment-bert (110M parameters)<br>
+        • <strong>Emotion:</strong> visegradmedia-emotion/Emotion_RoBERTa_german6_v7 (125M parameters)<br>
+        • <strong>Preprocessing:</strong> German stopwords + custom tokenization<br><br>
+        
+        <strong>English Language Processing:</strong><br>
+        • <strong>Sentiment:</strong> cardiffnlp/twitter-roberta-base-sentiment-latest<br>
+        • <strong>Emotion:</strong> j-hartmann/emotion-english-distilroberta-base<br>
+        • <strong>Topic Modeling:</strong> BERTopic + all-MiniLM-L6-v2 embeddings<br><br>
+        
+        <strong>Audio & Video Processing:</strong><br>
+        • <strong>Download:</strong> yt-dlp (manual YouTube processing, multiple formats)<br>
+        • <strong>Transcription:</strong> OpenAI Whisper (on-demand: tiny, base, small, medium, large)<br>
+        • <strong>Comment Extraction:</strong> Custom API integration<br><br>
+        
+        <strong>Visualization & Mapping:</strong><br>
+        • <strong>3D Maps:</strong> PyDeck with geographical sentiment overlays<br>
+        • <strong>Charts:</strong> Plotly interactive dashboards<br>
+        • <strong>Word Clouds:</strong> Custom styling with confidence filtering
+        </div>
+        
+        ```python
+        # Core Technology Stack (requirements.txt)
+        streamlit>=1.28.0
+        transformers>=4.30.0
+        torch>=2.0.0
+        bertopic>=0.15.0
+        sentence-transformers>=2.2.0
+        plotly>=5.15.0
+        pydeck>=0.8.0
+        yt-dlp>=2023.7.6
+        openai-whisper>=20230314
+        pandas>=2.0.0
+        numpy>=1.24.0
+        scikit-learn>=1.3.0
+        hdbscan>=0.8.29
+        umap-learn>=0.5.3
+        wordcloud>=1.9.2
+        langdetect>=1.0.9
+        
+        # File Structure (50+ specialized modules)
+        HerEducation/
+        ├── main.py                     # Multi-page app entry point
+        ├── pages/                      # 7 interactive apps
+        │   ├── 01_Project_Concept.py
+        │   ├── 02_UNESCO_Dashboard.py
+        │   ├── 03_Indicators_Development.py
+        │   ├── 04_YouTube_Analyzer.py
+        │   ├── 05_German_NLP_Analysis.py
+        │   ├── 06_English_NLP_Analysis.py
+        │   └── 07_Global_Discourse_Analysis.py
+        ├── models/                     # ML model management
+        │   ├── model_loader_german.py
+        │   └── model_loader_english.py
+        ├── utils/                      # 50+ utility modules
+        │   ├── sentiment_analysis_german.py
+        │   ├── emotion_analysis_german.py
+        │   ├── topic_analysis_german.py
+        │   ├── sentiment_analysis_english.py
+        │   ├── emotion_analysis_english.py
+        │   ├── topic_analysis_english.py
+        │   ├── global_discourse_country_detector.py
+        │   ├── youtube_downloader.py
+        │   ├── data_loader.py
+        │   └── ... (40+ more specialized modules)
+        ├── data/                       # UNESCO static datasets
+        └── saved_results/              # Session-based analysis persistence
+        ```
         """)
 
-# ===== HAUPTSEKTIONEN =====
+# ===== VALUE PROPOSITION =====
 if st.session_state.language == "DE":
     st.markdown("""
-    ### 📊 Global Methodology & Transferable Framework
-    Entdecken Sie das **wissenschaftliche Framework** und die **bewährten Methoden**, die in **jedem Land** 
-    für Educational Equity Assessment eingesetzt werden können. **Proof-of-Concept:** Malaysia → **Skalierung:** Weltweit.
-
-    ### 🌍 UNESCO HerAtlas (Global Coverage)
-    Analysieren Sie den **rechtlichen Rahmen** und die **Bildungspolitik aller 196 UN-Mitgliedsländer** 
-    basierend auf UNESCO HerAtlas-Daten:
-    - **Gender-equitable Policy Analysis** mit Cross-Country Benchmarking
-    - **International Agreements Tracking** für Girls' Education (CEDAW, CRC, etc.)
-    - **Constitutional Rights Assessment** - Education as Human Right
-    - **Compulsory Education Analysis** mit Gender Parity Indicators
-
-    ### 📈 SDG 4 Indicators Analysis (UNESCO Data)
-    **Statische Analyse** der **SDG 4-Indikatoren** basierend auf UNESCO-Daten:
-    - **Multi-Country Rankings** und Regional Comparisons
-    - **Peer-Country Analysis** für ähnliche Entwicklungsstadien  
-    - **Historical Trends** und Progress Tracking
-    - **Gap Analysis** für Policy Identification
-
-    ### 🎬 YouTube Intelligence (Fokus: Bildungsdiskurse)
-    **Spezialisierte Tools** zur Analyse bildungsbezogener **YouTube-Diskurse**:
-    - **YouTube Comment Analysis** (Kommentar-Download und Analyse)
-    - **Cultural Sentiment Mapping** mit sprachspezifischen Modellen (Deutsch/Englisch)
-    - **Video Transcription** (OpenAI Whisper) für Content-Analyse
-    - **Batch Analysis** für mehrere Videos (manuell ausgewählt)
-
-    ### 💬 Multilingual NLP Analysis (Culturally-Adaptive)
-    **Umfassende Analyse** von Social Media-Diskursen in **jeder Sprache**:
-    1. **Automated Language Detection** mit kultureller Kontextualisierung
-    2. **Culturally-Calibrated Sentiment Analysis** (nicht nur positive/negative)
-    3. **Topic Modeling** für länderspezifische Educational Themes
-    4. **Cross-Cultural Emotion Analysis** adapted to expression patterns
-    5. **Specialized Analysis** für Education & Gender Topics mit lokalen Nuancen
-
-    ### 🌍 Global Discourse Analysis (YouTube Comments)
-    **Vergleichende Analyse** von YouTube-Kommentaren zu Bildungsthemen:
-    - **Cross-Country Sentiment Comparison** (Deutsch/Englisch)
-    - **Topic Extraction** - welche Themen werden diskutiert?
-    - **Emotion Mapping** - wie fühlen Menschen über Bildungsthemen?
-    - **Keyword Search** - finde alle Kommentare zu spezifischen Begriffen (z.B. "Stolz")
-    - **Data Export** für weitere Analyse
+    ### 🎯 Data Science Portfolio Highlights
+    
+    **Für Senior Data Science Positionen:**
+    
+    **🚀 End-to-End ML Pipeline:** Raw YouTube data → 6 ML models → Interactive dashboards → Policy recommendations
+    
+    **🌍 Geographic Data Science:** 50+ country auto-detection + 3D sentiment mapping + cross-cultural analytics
+    
+    **🔧 Interactive Architecture:** Modular design + error handling + session-based caching + batch processing
+    
+    **🧠 Advanced NLP:** Multi-language transformers + topic modeling + emotion analysis + confidence scoring
+    
+    **📊 Business Intelligence:** UNESCO data integration + statistical modeling + automated insights + export systems
     """)
 else:
     st.markdown("""
-    ### 📊 Global Methodology & Transferable Framework
-    Discover the **scientific framework** and **proven methods** that can be applied in **any country** 
-    for Educational Equity Assessment. **Proof-of-Concept:** Malaysia → **Scaling:** Worldwide.
-
-    ### 🌍 UNESCO HerAtlas (Global Coverage)
-    Analyze the **legal framework** and **education policy of all 196 UN member countries** 
-    based on UNESCO HerAtlas data:
-    - **Gender-equitable Policy Analysis** with cross-country benchmarking
-    - **International Agreements Tracking** for Girls' Education (CEDAW, CRC, etc.)
-    - **Constitutional Rights Assessment** - Education as Human Right
-    - **Compulsory Education Analysis** with Gender Parity Indicators
-
-    ### 📈 SDG 4 Indicators Analysis (UNESCO Data)
-    **Static analysis** of **SDG 4 indicators** based on UNESCO data:
-    - **Multi-Country Rankings** and Regional Comparisons
-    - **Peer-Country Analysis** for similar development stages
-    - **Historical Trends** and Progress Tracking
-    - **Gap Analysis** for Policy Identification
-
-    ### 🎬 YouTube Intelligence (Focus: Educational Discourse)
-    **Specialized tools** for analyzing education-related **YouTube discourse**:
-    - **YouTube Comment Analysis** (comment download and analysis)
-    - **Cultural Sentiment Mapping** with language-specific models (German/English)
-    - **Video Transcription** (OpenAI Whisper) for content analysis
-    - **Batch Analysis** for multiple videos (manually selected)
-
-    ### 💬 Multilingual NLP Analysis (Culturally-Adaptive)
-    **Comprehensive analysis** of social media discourse in **any language**:
-    1. **Automated Language Detection** with cultural contextualization
-    2. **Culturally-Calibrated Sentiment Analysis** (beyond positive/negative)
-    3. **Topic Modeling** for country-specific educational themes
-    4. **Cross-Cultural Emotion Analysis** adapted to expression patterns
-    5. **Specialized Analysis** for Education & Gender Topics with local nuances
-
-    ### 🌍 Global Discourse Analysis (YouTube Comments)
-    **Comparative analysis** of YouTube comments on educational topics:
-    - **Cross-Country Sentiment Comparison** (German/English)
-    - **Topic Extraction** - what themes are discussed?
-    - **Emotion Mapping** - how do people feel about educational topics?
-    - **Keyword Search** - find all comments on specific terms (e.g. "pride")
-    - **Data Export** for further analysis
+    ### 🎯 Data Science Portfolio Highlights
+    
+    **For Senior Data Science Positions:**
+    
+    **🚀 End-to-End ML Pipeline:** Raw YouTube data → 6 ML models → Interactive dashboards → Policy recommendations
+    
+    **🌍 Geographic Data Science:** 50+ country auto-detection + 3D sentiment mapping + cross-cultural analytics
+    
+    **🔧 Interactive Architecture:** Modular design + error handling + session-based caching + batch processing
+    
+    **🧠 Advanced NLP:** Multi-language transformers + topic modeling + emotion analysis + confidence scoring
+    
+    **📊 Business Intelligence:** UNESCO data integration + statistical modeling + automated insights + export systems
     """)
 
 # ===== INFO-BOX =====
 if st.session_state.language == "DE":
     st.info(f"""
-    📌 **{t('app_title')}** kombiniert **UNESCO-Bildungsdaten mit innovativer Social Media-Analyse**, 
-    um **skalierbare, evidenzbasierte Lösungen** für **Educational Equity in jedem kulturellen Kontext** zu entwickeln.
+    🎯 **Einstein-Prinzip:** YouTube + UNESCO = Policy Intelligence
     
-    **🎯 UN SDG 4 Relevance:** Direct alignment mit SDG 4.1-4.7 indicators • **196 countries ready** • **Cultural adaptability proven**
+    **Kernformel:** Social Media Discourse → Interactive ML Analysis → Evidence-Based Policy
+    
+    **Messbare Ergebnisse:** 50+ Länder • 196 UNESCO-Datensätze • 7 interaktive Apps • 6 ML-Modelle
     """)
 else:
     st.info(f"""
-    📌 **{t('app_title')}** combines **UNESCO education data with innovative social media analysis** 
-    to develop **scalable, evidence-based solutions** for **Educational Equity in any cultural context**.
+    🎯 **Einstein Principle:** YouTube + UNESCO = Policy Intelligence
     
-    **🎯 UN SDG 4 Relevance:** Direct alignment with SDG 4.1-4.7 indicators • **196 countries ready** • **Cultural adaptability proven**
+    **Core Formula:** Social Media Discourse → Interactive ML Analysis → Evidence-Based Policy
+    
+    **Measurable Results:** 50+ Countries • 196 UNESCO Datasets • 7 Interactive Apps • 6 ML Models
     """)
 
-# ===== TECHNISCHE FEATURES =====
+# ===== QUICK START =====
 if st.session_state.language == "DE":
     st.markdown("""
-    ### 🔬 Skalierbare ML-Architektur für internationale Entwicklungszusammenarbeit
+    ### 🚀 Schnellstart für Recruiter
     
-    **Multi-Language NLP Pipeline (Global Deployment Ready):**
-    
-    **1. Adaptive Sentiment Analysis**
-    - **Models:** BERT, RoBERTa, DistilBERT (kulturspezifisch fine-tuned)
-    - **Cultural Calibration:** Context-aware adaptation für verschiedene Kulturen
-    - **Implementation:** Hugging Face Transformers mit Cultural Adapters
-    - **Skalierung:** Template-basierte Erweiterung für neue Sprachen/Kulturen
-    
-    **2. Cross-Cultural Emotion Analysis**
-    - **Models:** Emotion-RoBERTa mit kulturellen Anpassungsschichten
-    - **Emotion Categories:** Universal emotions + kulturspezifische Kategorien
-    - **Implementation:** Ensemble-Methods für kulturelle Nuancen
-    - **Validation:** Native Speaker Validation in Zielsprachen
-    
-    **3. Global Topic Modeling**
-    - **Framework:** BERTopic mit Multilingual-BERT-Embeddings
-    - **Clustering:** HDBSCAN mit kulturellen Kontextvariablen
-    - **Topic Mapping:** Automatisierte Cross-Language-Topic-Zuordnung
-    - **Evaluation:** Coherence-Metrics + Expert Domain Validation
-    
-    **4. UNESCO Data Integration Pipeline**
-    - **Coverage:** Alle 196 UN-Mitgliedsländer, Real-time Updates
-    - **Indicators:** SDG 4.1-4.7 vollständig abgedeckt
-    - **Analysis:** Automated Gap Analysis, Progress Tracking
-    - **Reporting:** UN/World Bank-kompatible Formate
-    
-    ### 🎯 Praktische Anwendungen für International Development Organizations
-    
-    **UN Agencies (UNDP, UNESCO, UNICEF):**
-    - Real-time SDG 4 Progress Monitoring in Programmländern
-    - Cultural Barriers Assessment für Bildungsprogramme
-    - Community Sentiment Analysis für lokale Akzeptanz
-    - Evidence-based Program Design mit lokalen Insights
-    
-    **World Bank & Regional Development Banks:**
-    - Policy Impact Assessment vor Programm-Implementation
-    - Cultural Risk Analysis für Bildungsinvestitionen
-    - Cross-Country Best Practice Identification
-    - Automated Reporting für Donor Relations
-    
-    **Bilateral Development Cooperation:**
-    - Cultural Intelligence für Entwicklungsprojekte
-    - Local Stakeholder Sentiment Monitoring
-    - Adaptive Program Management basierend auf Community Feedback
-    - Success Probability Assessment für Policy Interventions
-    
-    **International NGOs:**
-    - Community-based Program Design mit Cultural Insights
-    - Local Partner Selection basierend auf Discourse Analysis
-    - Impact Measurement durch Sentiment Change Tracking
-    - Advocacy Strategy Development mit Evidence-based Arguments
+    **1. System verstehen:** Navigieren Sie durch die 7 Seiten um die Funktionalität zu sehen
+    **2. YouTube-Analyse testen:** Seite 4 → Video-URL eingeben → Audio manuell transkribieren
+    **3. NLP-Pipeline erleben:** Seite 5/6 → Kommentare interaktiv analysieren → Sentiment/Emotion/Topics
+    **4. Global Analysis:** Seite 7 → Ländervergleiche → 3D-Weltkarte → Session-Export
+    **5. UNESCO-Daten:** Seite 2/3 → 196 Länder → Statische Bildungsindikatoren
     """)
 else:
     st.markdown("""
-    ### 🔬 Scalable ML Architecture for International Development Cooperation
+    ### 🚀 Quick Start for Recruiters
     
-    **Multi-Language NLP Pipeline (Global Deployment Ready):**
-    
-    **1. Adaptive Sentiment Analysis**
-    - **Models:** BERT, RoBERTa, DistilBERT (culturally fine-tuned)
-    - **Cultural Calibration:** Context-aware adaptation for different cultures
-    - **Implementation:** Hugging Face Transformers with Cultural Adapters
-    - **Scaling:** Template-based extension for new languages/cultures
-    
-    **2. Cross-Cultural Emotion Analysis**
-    - **Models:** Emotion-RoBERTa with cultural adaptation layers
-    - **Emotion Categories:** Universal emotions + culture-specific categories
-    - **Implementation:** Ensemble methods for cultural nuances
-    - **Validation:** Native speaker validation in target languages
-    
-    **3. Global Topic Modeling**
-    - **Framework:** BERTopic with Multilingual-BERT embeddings
-    - **Clustering:** HDBSCAN with cultural context variables
-    - **Topic Mapping:** Automated cross-language topic assignment
-    - **Evaluation:** Coherence metrics + expert domain validation
-    
-    **4. UNESCO Data Integration Pipeline**
-    - **Coverage:** All 196 UN member countries, real-time updates
-    - **Indicators:** SDG 4.1-4.7 fully covered
-    - **Analysis:** Automated gap analysis, progress tracking
-    - **Reporting:** UN/World Bank compatible formats
-    
-    ### 🎯 Practical Applications for International Development Organizations
-    
-    **UN Agencies (UNDP, UNESCO, UNICEF):**
-    - Real-time SDG 4 progress monitoring in program countries
-    - Cultural barriers assessment for education programs
-    - Community sentiment analysis for local acceptance
-    - Evidence-based program design with local insights
-    
-    **World Bank & Regional Development Banks:**
-    - Policy impact assessment before program implementation
-    - Cultural risk analysis for education investments
-    - Cross-country best practice identification
-    - Automated reporting for donor relations
-    
-    **Bilateral Development Cooperation:**
-    - Cultural intelligence for development projects
-    - Local stakeholder sentiment monitoring
-    - Adaptive program management based on community feedback
-    - Success probability assessment for policy interventions
-    
-    **International NGOs:**
-    - Community-based program design with cultural insights
-    - Local partner selection based on discourse analysis
-    - Impact measurement through sentiment change tracking
-    - Advocacy strategy development with evidence-based arguments
+    **1. Understand System:** Navigate through 7 pages to see functionality
+    **2. Test YouTube Analysis:** Page 4 → Enter video URL → Manually transcribe audio
+    **3. Experience NLP Pipeline:** Page 5/6 → Interactively analyze comments → Sentiment/Emotion/Topics
+    **4. Global Analysis:** Page 7 → Country comparisons → 3D world map → Session export
+    **5. UNESCO Data:** Page 2/3 → 196 countries → Static education indicators
     """)
 
 # ===== MODUL-PROBLEME PRÜFEN =====
@@ -640,38 +628,26 @@ if not persistence_available:
     missing_modules.append("pickle und/oder json")
 
 if missing_modules:
-    with st.expander("⚠️ Technical Dependencies & Deployment Notes" if st.session_state.language == "EN" else "⚠️ Technische Abhängigkeiten & Deployment-Hinweise", expanded=False):
+    with st.expander("⚠️ Installation Notes (Click for Setup)" if st.session_state.language == "EN" else "⚠️ Installations-Hinweise (Klicken für Setup)", expanded=False):
         if st.session_state.language == "DE":
-            st.warning(f"Einige Module für vollständige Funktionalität: {', '.join(missing_modules)}")
-            st.info("""
-            **Production Deployment**: Verwenden Sie die `requirements.txt` für vollständige Installation:
-            
-            ```bash
-            pip install -r requirements.txt
-            python -m nltk.downloader all  # For NLP components
-            ```
-            
-            **UN/International Deployment Recommendations:**
-            - **Docker Containerization** für konsistente Environments
-            - **Kubernetes Orchestration** für Multi-Country Deployment
-            - **Cloud-native Architecture** (AWS/Azure/GCP) für globale Skalierung
-            - **Security Compliance** nach UN IT Security Standards
+            st.warning(f"Für vollständige Funktionalität installieren: {', '.join(missing_modules)}")
+            st.code("""
+# Full Installation
+pip install -r requirements.txt
+python -m nltk.downloader all
+
+# Launch Interactive Application
+streamlit run main.py
             """)
         else:
-            st.warning(f"Some modules for full functionality: {', '.join(missing_modules)}")
-            st.info("""
-            **Production Deployment**: Use the `requirements.txt` for complete installation:
-            
-            ```bash
-            pip install -r requirements.txt
-            python -m nltk.downloader all  # For NLP components
-            ```
-            
-            **UN/International Deployment Recommendations:**
-            - **Docker Containerization** for consistent environments
-            - **Kubernetes Orchestration** for multi-country deployment
-            - **Cloud-native Architecture** (AWS/Azure/GCP) for global scaling
-            - **Security Compliance** according to UN IT Security Standards
+            st.warning(f"For full functionality install: {', '.join(missing_modules)}")
+            st.code("""
+# Full Installation
+pip install -r requirements.txt
+python -m nltk.downloader all
+
+# Launch Interactive Application
+streamlit run main.py
             """)
 
 # ===== FOOTER =====

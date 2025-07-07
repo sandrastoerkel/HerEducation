@@ -635,10 +635,6 @@ def main():
     init_language()
     language_switcher()
     
-    # === DEBUG: VERSIONEN ANZEIGEN - TEMPORÄR ===
-    st.sidebar.error(f"🔍 DEBUG - Streamlit: {st.__version__}")
-    st.sidebar.error(f"🔍 DEBUG - PyDeck: {pdk.__version__}")
-    
     # Header anzeigen
     display_header()
     

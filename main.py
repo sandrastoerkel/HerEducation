@@ -160,7 +160,7 @@ if st.session_state.language == "DE":
     ### {t('app_subtitle')}
     
     **HerEducation** ist ein **funktionsfähiges 7-Module-Data-Science-System**, das **YouTube-Kommentare** 
-    in **UNESCO-kompatible Policy Intelligence** transformiert. **Interactive processing** von sozialen Medien 
+     transformiert. **Interactive processing** von sozialen Medien 
     für **evidenzbasierte Bildungspolitik**.
     
     ### {t('app_description')}

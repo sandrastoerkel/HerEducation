@@ -124,7 +124,7 @@ class UIConstants:
     AUTHOR_NAME = "Sandra Störkel"
     PROJECT_NAME = "HerEducation"
     YEAR = "2025"
-    FOOTER_SUBTITLE = "Entwickelt für Bildungsgleichberechtigung weltweit"
+    FOOTER_SUBTITLE = "Built for educational equity worldwide"
     
     # Debug section
     DEBUG_TITLE = "🔧 Debug & Consistency Test"

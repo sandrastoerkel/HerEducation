@@ -129,7 +129,7 @@ class SharedStyles:
         return f"""
         <div class="copyright-footer">
             <p>© {AppConfig.COPYRIGHT_YEAR} <span class="author-name">{AppConfig.AUTHOR_NAME}</span> | HerEducation Platform</p>
-            <p>Entwickelt für Bildungsgleichberechtigung weltweit</p>
+            <p>{'Built for educational equity worldwide' if st.session_state.get('language', 'DE') == 'EN' else 'Entwickelt für Bildungsgleichberechtigung weltweit'}</p>
         </div>
         """
 

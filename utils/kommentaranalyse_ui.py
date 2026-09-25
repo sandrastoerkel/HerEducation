@@ -118,7 +118,7 @@ class KommentaranalyseUI:
 
         <div class="copyright-footer">
             <p>© 2025 <span class="author-name">Sandra Störkel</span> | HerEducation Platform</p>
-            <p>Entwickelt für Bildungsgleichberechtigung weltweit</p>
+            <p>""" + ("Built for educational equity worldwide" if st.session_state.get("language", "DE") == "EN" else "Entwickelt für Bildungsgleichberechtigung weltweit") + """</p>
         </div>
         """, unsafe_allow_html=True)
     

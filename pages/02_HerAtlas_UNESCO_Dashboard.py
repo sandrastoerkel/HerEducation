@@ -233,7 +233,7 @@ def display_indicators_overview(df: pd.DataFrame):
     st.header(t("education_indicators", "Vorhandene Bildungsindikatoren"))
     
     try:
-        abschnitte = get_indicators_sections()
+        abschnitte = get_indicators_sections("en" if st.session_state.language == "EN" else "de")
         available_years = sorted(df['Jahr'].dropna().unique())
         current_year = available_years[-1] if available_years else 2019
         
@@ -277,8 +277,7 @@ def display_indicators_overview(df: pd.DataFrame):
                         description = beschreibung
                     else:
                         title = en_title
-                        # Für Englisch verwenden wir den deutschen Beschreibungstext, 
-                        # da keine englischen Beschreibungen verfügbar sind
+                        # Englische Beschreibungen kommen aus utils/indicators.py (description_english)
                         description = beschreibung
                     
                     st.markdown(f"""

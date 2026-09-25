@@ -235,6 +235,6 @@ def display_main_footer():
     st.markdown(f"""
     <div class="copyright-footer">
         <p>© 2025 <span class="author-name">Sandra Störkel</span> | <span class="app-title">{t('app_title')} Platform</span></p>
-        <p>Entwickelt mit 💫 für eine bessere Bildungswelt | UNESCO & YouTube Social Analytics</p>
+        <p>{'Built with 💫 for a better world of education' if st.session_state.get('language', 'DE') == 'EN' else 'Entwickelt mit 💫 für eine bessere Bildungswelt'} | UNESCO & YouTube Social Analytics</p>
     </div>
     """, unsafe_allow_html=True)

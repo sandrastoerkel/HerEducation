@@ -40,9 +40,9 @@ EXAMPLES = [
     },
     {
         "lang": "en",
-        "file": "20250609_123927_en_sentiment_emotion_topic_In_Finland_classes_in_recogni.csv",
-        "label": "In Finland, classes in recogni… (Finland)",
-        "source_name": "In Finland classes in recogni.csv",
+        "file": "20260925_en_sentiment_emotion_topic_5_Reasons_Why_Finland_Is_A_Global_Education_Leader.csv",
+        "label": "5 Reasons Why Finland Is A Global Education Leader (2016)",
+        "source_name": "2016-08-15_UfmFIEh2QjU_5 Reasons Why Finland Is A Global Education Leader.csv",
     },
 ]
 

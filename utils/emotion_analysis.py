@@ -1309,10 +1309,14 @@ def prepare_emotion_analysis(
     df: pd.DataFrame, 
     emotion_classifier: Any,
     model_weight: float = GermanEmotionAnalysisConstants.DEFAULT_MODEL_WEIGHT,
-    confidence_threshold: float = GermanEmotionAnalysisConstants.DEFAULT_CONFIDENCE_THRESHOLD
+    confidence_threshold: float = GermanEmotionAnalysisConstants.DEFAULT_CONFIDENCE_THRESHOLD,
+    show_config_ui: bool = True
 ) -> pd.DataFrame:
     """
     MODERNIZED: Perform enhanced German emotion analysis with configurable parameters
+    
+    show_config_ui=False: ohne Regler/Ausgaben (Live-Analyse im Hintergrund); es gelten
+    dieselben Standardwerte wie in der Oberflaeche ohne "Erweiterte Einstellungen".
     
     Args:
         df: DataFrame with comments
@@ -1331,15 +1335,17 @@ def prepare_emotion_analysis(
     )
     
     # === UI: Parameter Settings ===
-    config = render_german_emotion_analysis_config()
+    if show_config_ui:
+        config = render_german_emotion_analysis_config()
     
     # === BUSINESS: Use Enterprise Manager ===
     manager = GermanEmotionAnalysisManager(config)
     results = manager.analyze_emotions(df, emotion_classifier)
     
     # Show detection frequency in sentences
-    st.write("### Erkennungshäufigkeit in Sätzen:")
-    if results.statistics.sentence_counts:
+    if show_config_ui:
+        st.write("### Erkennungshäufigkeit in Sätzen:")
+    if show_config_ui and results.statistics.sentence_counts:
         sorted_counts = dict(sorted(results.statistics.sentence_counts.items(), key=lambda x: x[1], reverse=True))
         for emotion, count in sorted_counts.items():
             st.write(f"'{emotion}' in Sätzen erkannt: {count} mal")

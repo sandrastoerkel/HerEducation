@@ -798,12 +798,20 @@ def prepare_topic_analysis(df: pd.DataFrame, text_column: str) -> Tuple[pd.DataF
                     st.warning("BERTopic-Modell konnte nicht geladen werden. Die thematische Analyse wird übersprungen.")
                     return df, None, None, None, None
                 
-                # Topics zuweisen
-                topics, _ = topic_model.fit_transform(topic_df['clean_text'])
+                # Topics zuweisen (Modell wurde in train_topic_model bereits trainiert;
+                # frueher wurde hier ein zweites Mal fit_transform ausgefuehrt)
+                topics = list(topic_model.topics_)
                 topic_df['topic'] = topics
                 
-                # Topics zurück in Original-DataFrame übertragen
-                topic_map = dict(zip(topic_df.index, topic_df['topic']))
+                # Topics zurück in Original-DataFrame übertragen.
+                # topic_df ist gefiltert und neu durchnummeriert (0..n-1); darum über die
+                # Original-Positionen der gültigen Zeilen zuordnen (Fix 25.09.2026:
+                # vorher verschoben, sobald ein Kommentar herausgefiltert wurde).
+                valid_index = df.index[df['clean_text'].str.len() > config.min_text_length]
+                if len(valid_index) == len(topic_df):
+                    topic_map = dict(zip(valid_index, topic_df['topic']))
+                else:
+                    topic_map = dict(zip(topic_df.index, topic_df['topic']))
                 df['topic'] = df.index.map(lambda x: topic_map.get(x, OUTLIER_TOPIC_ID))
                 
                 # === BUSINESS: Topic-Informationen extrahieren ===

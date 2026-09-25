@@ -1,8 +1,8 @@
 import streamlit as st
 import warnings
 import logging
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 from utils.check_dependencies import is_bertopic_available
+from models.pipeline_adapters import AllScoresPipeline
 
 # Unterdrücke PyTorch-Warnungen bezüglich '__path__._path'
 warnings.filterwarnings("ignore", message=".*Tried to instantiate class '__path__._path'.*")
@@ -10,75 +10,85 @@ warnings.filterwarnings("ignore", message=".*Tried to instantiate class '__path_
 # Reduziere das Log-Level für Transformers-Bibliothek
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
-@st.cache_resource
+# transformers/torch werden erst beim ersten Laden eines Modells importiert
+# (nicht schon beim Seitenaufruf) – spart Zeit und Arbeitsspeicher, solange
+# niemand eine Live-Analyse startet.
+
+
+@st.cache_resource(show_spinner=False)
 def load_sentiment_model():
     """
     Lädt das Sentiment-Analyse-Modell
     """
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
     model_name = "oliverguhr/german-sentiment-bert"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
     return pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
 
-@st.cache_resource
+
+@st.cache_resource(show_spinner=False)
 def load_emotion_model():
     """
-    Lädt das Emotions-Analyse-Modell
+    Lädt das Emotions-Analyse-Modell (deutsch).
+    Rueckgabe: AllScoresPipeline – liefert immer alle Emotions-Scores
+    (return_all_scores wirkt in transformers 5.x nicht mehr, siehe pipeline_adapters.py).
     """
     try:
-        # Emotionserkennungs-Pipeline laden (deutsches Modell)
-        emotion_classifier = pipeline("text-classification", 
-                                     model="visegradmedia-emotion/Emotion_RoBERTa_german6_v7", 
-                                     return_all_scores=True)
-        return emotion_classifier
+        from transformers import pipeline
+        emotion_classifier = pipeline("text-classification",
+                                      model="visegradmedia-emotion/Emotion_RoBERTa_german6_v7")
+        return AllScoresPipeline(emotion_classifier)
     except Exception as e:
         st.error(f"Fehler beim Laden des Emotionserkennungsmodells: {str(e)}")
         return None
 
-@st.cache_resource
+
+@st.cache_resource(show_spinner=False)
+def load_embedding_model():
+    """Satz-Embedding-Modell fuer BERTopic (einmal laden, von allen Laeufen geteilt)."""
+    from sentence_transformers import SentenceTransformer
+    return SentenceTransformer("distiluse-base-multilingual-cased-v1")
+
+
 def load_bertopic_model():
     """
-    Lädt das BERTopic-Modell mit angepassten Parametern
+    Erstellt das BERTopic-Modell mit angepassten Parametern.
+    Jeder Aufruf liefert ein NEUES BERTopic-Objekt (nicht gecacht): fit_transform veraendert
+    das Objekt, ein geteiltes Objekt wuerde sonst von gleichzeitigen Laeufen ueberschrieben.
+    Nur das Embedding-Modell wird geteilt.
     """
     if not is_bertopic_available():
         return None
-    
+
     try:
-        from sentence_transformers import SentenceTransformer
         from bertopic import BERTopic
-        
-        # Imports für angepasste Parameter
+
         try:
             from hdbscan import HDBSCAN
         except ImportError:
             st.warning("HDBSCAN konnte nicht importiert werden. Standardparameter werden verwendet.")
             HDBSCAN = None
-        
-        # Multilinguales Modell (gut für deutsche Texte)
-        embedding_model = SentenceTransformer("distiluse-base-multilingual-cased-v1")
-        
-        # BERTopic mit angepassten Parametern für mehr Themen
+
+        embedding_model = load_embedding_model()
+
         if HDBSCAN is not None:
-            # HDBSCAN mit angepassten Parametern
             hdbscan_model = HDBSCAN(
-                min_cluster_size=5,  # Kleinere Cluster erlauben
-                min_samples=2,       # Weniger Samples pro Cluster benötigt
+                min_cluster_size=5,
+                min_samples=2,
                 metric='euclidean',
                 cluster_selection_method='eom',
                 prediction_data=True
             )
-            
-            # BERTopic mit angepassten Parametern
             topic_model = BERTopic(
                 embedding_model=embedding_model,
                 language="german",
                 hdbscan_model=hdbscan_model,
-                nr_topics="auto"  # Automatische Themenanzahl
+                nr_topics="auto"
             )
         else:
-            # Fallback zu Standardparametern
             topic_model = BERTopic(embedding_model=embedding_model, language="german")
-            
+
         return topic_model
     except Exception as e:
         st.error(f"Fehler beim Laden des BERTopic-Modells: {str(e)}")

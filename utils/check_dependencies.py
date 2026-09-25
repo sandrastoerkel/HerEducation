@@ -36,11 +36,14 @@ def _check_bertopic_availability() -> bool:
     Returns:
         True if BERTopic is available and functional
     """
+    # Nur pruefen, ob die Pakete installiert sind – NICHT importieren.
+    # Der Import von bertopic/sentence_transformers laedt torch, umap und numba und
+    # kostete bei jedem Seitenaufruf Zeit und Arbeitsspeicher. Der echte Import
+    # passiert erst in models/model_loader*.py, wenn eine Live-Analyse startet.
+    from importlib.util import find_spec
     try:
-        from bertopic import BERTopic
-        from sentence_transformers import SentenceTransformer
-        return True
-    except ImportError:
+        return find_spec("bertopic") is not None and find_spec("sentence_transformers") is not None
+    except (ImportError, ValueError):
         return False
 
 

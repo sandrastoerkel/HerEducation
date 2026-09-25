@@ -1053,7 +1053,8 @@ def prepare_emotion_analysis(
     df: pd.DataFrame, 
     emotion_classifier: Any, 
     model_weight: float = DEFAULT_MODEL_WEIGHT, 
-    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD
+    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
+    show_config_ui: bool = True
 ) -> pd.DataFrame:
     """
     Perform enhanced emotion analysis for all comments with configurable parameters.
@@ -1068,7 +1069,9 @@ def prepare_emotion_analysis(
         DataFrame with emotion information
     """
     # Render parameter UI and get configuration
-    config = render_parameter_ui()
+    # (show_config_ui=False: no widgets/output – background live run; same defaults
+    #  as the UI without "advanced settings")
+    config = render_parameter_ui() if show_config_ui else EmotionAnalysisConfig()
     
     # Override with provided parameters if different from default
     if model_weight != DEFAULT_MODEL_WEIGHT:
@@ -1127,8 +1130,9 @@ def prepare_emotion_analysis(
     store_analysis_parameters(config, statistics)
     
     # Show detection frequency in sentences
-    st.write("### Detection frequency in sentences:")
-    if statistics.sentence_counts:
+    if show_config_ui:
+        st.write("### Detection frequency in sentences:")
+    if show_config_ui and statistics.sentence_counts:
         sorted_counts = dict(sorted(statistics.sentence_counts.items(), key=lambda x: x[1], reverse=True))
         for emotion, count in sorted_counts.items():
             st.write(f"'{emotion}' detected in sentences: {count} times")

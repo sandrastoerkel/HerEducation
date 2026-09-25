@@ -43,6 +43,11 @@ from utils.commentanalysis_english_persistence import CommentAnalysisPersistence
 from utils.commentanalysis_english_file_handler import CommentAnalysisFileHandler
 from utils.commentanalysis_english_youtube import CommentAnalysisYouTube
 from utils.commentanalysis_english_ui import CommentAnalysisUI
+from utils.example_analyses import render_example_picker
+from utils.live_comment_analysis import (
+    LiveAnalysisError, is_cloud, is_live_result, limit_comments, live_max_comments,
+    render_live_section, render_result_download, render_status, run_pending_analysis)
+from models.pipeline_adapters import CachedPipeline
 
 # === INITIALIZE MANAGERS ===
 persistence_manager = CommentAnalysisPersistence(RESULTS_DIR)
@@ -135,7 +140,8 @@ except ImportError:
 
 # Try to import analysis modules
 try:
-    from utils.sentiment_analysis_english import analyze_sentiment, display_sentiment_results
+    from utils.sentiment_analysis_english import (analyze_sentiment, display_sentiment_results,
+                                                  perform_batch_sentiment_analysis, SentimentAnalysisConfig)
     SENTIMENT_ANALYSIS_AVAILABLE = True
 except ImportError as e:
     SENTIMENT_ANALYSIS_AVAILABLE = False
@@ -290,6 +296,76 @@ def display_sentiment_results_fallback(df, text_column):
             st.write("")
 
 # ================================================================================
+# LIVE ANALYSIS (runs without widgets; control flow in utils/live_comment_analysis.py)
+# ================================================================================
+
+LIVE_STEPS_EN = [
+    "Read and clean the file (English comments only)",
+    "Load the sentiment model and rate the comments",
+    "Find topics (BERTopic)",
+    "Load the emotion model and detect emotions",
+]
+
+
+def run_live_analysis_en(file_obj, request, progress):
+    """Full analysis in the previous order (sentiment -> topics -> emotions), without widgets.
+
+    Uses the UI default values. The result is written to the session by run_pending_analysis()
+    only after the complete run.
+    """
+    notes = []
+
+    progress.step(0)
+    df, text_column = load_and_clean_data(file_obj)
+    if df is None or text_column is None or len(df) == 0:
+        raise LiveAnalysisError("No English comments were found in the file.")
+    df[text_column] = df[text_column].fillna("").astype(str)
+    df = df[df[text_column].str.len() > 0].reset_index(drop=True)
+    if len(df) == 0:
+        raise LiveAnalysisError("No English comments were found in the file.")
+    df, total = limit_comments(df, live_max_comments())
+    if len(df) < total:
+        notes.append(f"The file contains {total:,} comments – a fixed sample of {len(df):,} was analysed.")
+    df = file_handler.apply_text_cleaning(df, text_column)
+
+    progress.step(1)
+    if not (MODELS_AVAILABLE and SENTIMENT_ANALYSIS_AVAILABLE):
+        raise LiveAnalysisError("The sentiment model is not installed on this server.")
+    sentiment_pipeline = CachedPipeline(load_sentiment_model())
+    df = perform_batch_sentiment_analysis(df.copy(), text_column, sentiment_pipeline, SentimentAnalysisConfig())
+
+    additional_data = {}
+    progress.step(2)
+    if BERTOPIC_AVAILABLE and TOPIC_ANALYSIS_AVAILABLE:
+        df, topic_model, topic_info, topic_df, topic_labels = prepare_topic_analysis(df, text_column)
+        if topic_model is not None:
+            additional_data = {'topic_model': topic_model, 'topic_info': topic_info,
+                               'topic_df': topic_df, 'topic_labels': topic_labels}
+        else:
+            notes.append("Topic analysis skipped (too few longer comments or model not available).")
+    else:
+        notes.append("Topic analysis not available (BERTopic not installed).")
+
+    progress.step(3)
+    if EMOTION_ANALYSIS_AVAILABLE and MODELS_AVAILABLE:
+        emotion_classifier = load_emotion_model()
+        if emotion_classifier is not None:
+            df = prepare_emotion_analysis(df, emotion_classifier, show_config_ui=False)
+            recognized = int(df['emotions'].notna().sum()) if 'emotions' in df.columns else 0
+            if recognized == 0:
+                # do not show invented fallback values
+                df = df.drop(columns=['dominant_emotion'], errors='ignore')
+                notes.append("Emotions could not be detected – the emotion tab is hidden.")
+            elif recognized < len(df):
+                notes.append(f"Emotions detected for {recognized:,} of {len(df):,} comments "
+                             f"(very short comments are not rated).")
+        else:
+            notes.append("The emotion model could not be loaded.")
+
+    return {"df": df, "text_column": text_column, "additional_data": additional_data, "notes": notes}
+
+
+# ================================================================================
 # MAIN APPLICATION
 # ================================================================================
 
@@ -313,8 +389,15 @@ def main():
     if 'text_column' not in st.session_state:
         st.session_state.text_column = None
     
-    # Container for previous analyses
-    selected_file = ui_manager.display_saved_analyses_section(persistence_manager)
+    # Live analysis: run a requested analysis (shows only the progress, then reruns the page)
+    run_pending_analysis('en', run_live_analysis_en, LIVE_STEPS_EN)
+    render_status('en')
+    
+    # Example analyses always on top (or info about your own analysis)
+    render_example_picker('en')
+    
+    # Saved analyses – local only (the cloud does not store anything permanently)
+    selected_file = ui_manager.display_saved_analyses_section(persistence_manager) if not is_cloud() else None
     
     if selected_file:
         with st.spinner(f"Loading analysis for '{selected_file}'..."):
@@ -323,6 +406,8 @@ def main():
             if df is not None:
                 st.session_state.current_file = selected_file
                 st.session_state.df = df
+                st.session_state.result_source = "saved"
+                st.session_state.example_lang = "en"
                 
                 # Determine text column
                 possible_columns = ['comment_text', 'text', 'comment', 'kommentar', 'content', 'Text', 'Comment', 'Kommentar', 'Content']
@@ -342,64 +427,14 @@ def main():
             else:
                 st.error(f"Could not load data for '{selected_file}'.")
     
-    # Display current file
-    if st.session_state.current_file:
-        st.info(f"📄 Current Analysis: {st.session_state.current_file}")
-        
-        # Option to reset
-        if st.button("🔄 Start New Analysis"):
-            st.session_state.current_file = None
-            st.session_state.df = None
-            st.session_state.text_column = None
-            st.session_state.additional_data = {}
-            st.rerun()
-    
-    # Check dependencies
-    missing_deps = []
-    
-    if not MODELS_AVAILABLE:
-        missing_deps.append("models.model_loader_english")
-    
-    if not BERTOPIC_CHECKED:
-        missing_deps.append("utils.check_dependencies")
-    
-    # Display missing dependencies
-    if missing_deps:
-        st.warning(f"⚠️ Some modules could not be loaded: {', '.join(missing_deps)}")
-        st.info("""
-        🔧 To use full functionality, make sure the following modules are correctly installed:
-        - transformers
-        - bertopic
-        - sentence-transformers
-        - hdbscan
-        - umap-learn
-        - nltk
-        - wordcloud
-        - yt-dlp (for YouTube information)
-        - langdetect (for language filtering)
-        
-        Additionally, the corresponding Python modules must be present in the utils and models directories.
-        """)
-    
-    # Load sentiment model if available
-    sentiment_pipeline = None
+    # Emotion model only for the model comparison of your own analysis (already loaded then).
+    # Otherwise models are loaded only when a live analysis starts, not on every page view.
     emotion_classifier = None
-    
-    if MODELS_AVAILABLE:
-        with st.spinner("Loading sentiment model..."):
-            try:
-                sentiment_pipeline = load_sentiment_model()
-                st.success("✅ Sentiment model successfully loaded!")
-            except Exception as e:
-                st.error(f"❌ Error loading sentiment model: {e}")
-        
-        with st.spinner("Loading emotion model..."):
-            try:
-                emotion_classifier = load_emotion_model()
-                if emotion_classifier:
-                    st.success("✅ Emotion model successfully loaded!")
-            except Exception as e:
-                st.error(f"❌ Error loading emotion model: {e}")
+    if MODELS_AVAILABLE and is_live_result('en'):
+        try:
+            emotion_classifier = load_emotion_model()
+        except Exception:
+            emotion_classifier = None
     
     # CASE 1: Display existing analysis
     if st.session_state.current_file and st.session_state.df is not None:
@@ -418,17 +453,20 @@ def main():
         tabs_to_create = ["📊 Sentiment Analysis"]
         
         # Check which analysis results are present in the data
-        if 'topic' in df.columns:
+        # (example analyses have topic assignments but no topic model -> no topic/special tab)
+        has_topic_model = st.session_state.additional_data.get('topic_model') is not None
+        has_topic_labels = bool(st.session_state.additional_data.get('topic_labels'))
+        if 'topic' in df.columns and has_topic_model:
             tabs_to_create.append("🏷️ Topic Analysis")
         
         if 'dominant_emotion' in df.columns:
             tabs_to_create.append("😊 Emotion Analysis")
             
             # More tabs depending on available data
-            if EMOTION_COMPARISON_AVAILABLE:
+            if EMOTION_COMPARISON_AVAILABLE and emotion_classifier is not None:
                 tabs_to_create.append("⚖️ Emotion Model Comparison")
         
-        if 'topic' in df.columns and SPECIAL_ANALYSIS_AVAILABLE:
+        if 'topic' in df.columns and SPECIAL_ANALYSIS_AVAILABLE and has_topic_labels:
             tabs_to_create.append("🔍 Special Analyses")
         
         # Create tabs
@@ -447,13 +485,15 @@ def main():
             
             if 'sentiment' in df.columns and SENTIMENT_ANALYSIS_AVAILABLE:
                 display_sentiment_results(df, text_column)
-            else:
+            elif 'sentiment' in df.columns:
                 display_sentiment_results_fallback(df, text_column)
+            else:
+                st.warning("No sentiment analysis is available for this data. Please start an analysis below.")
         
         tab_index += 1
         
         # Show other tabs when data is available
-        if 'topic' in df.columns and tab_index < len(main_tabs):
+        if 'topic' in df.columns and has_topic_model and tab_index < len(main_tabs):
             # Topic Analysis Tab
             with main_tabs[tab_index]:
                 # Display model information
@@ -491,7 +531,7 @@ def main():
             tab_index += 1
         
         # Show emotion model comparison when data is available
-        if 'dominant_emotion' in df.columns and EMOTION_COMPARISON_AVAILABLE and tab_index < len(main_tabs):
+        if 'dominant_emotion' in df.columns and EMOTION_COMPARISON_AVAILABLE and emotion_classifier is not None and tab_index < len(main_tabs):
             with main_tabs[tab_index]:
                 # Display model information (same as emotion, since it's comparing emotion models)
                 display_model_info("emotion")
@@ -504,7 +544,7 @@ def main():
             tab_index += 1
         
         # Show special analyses when data is available
-        if 'topic' in df.columns and SPECIAL_ANALYSIS_AVAILABLE and tab_index < len(main_tabs):
+        if 'topic' in df.columns and SPECIAL_ANALYSIS_AVAILABLE and has_topic_labels and tab_index < len(main_tabs):
             with main_tabs[tab_index]:
                 topic_labels = st.session_state.additional_data.get('topic_labels')
                 if topic_labels:
@@ -515,173 +555,17 @@ def main():
         # Show data preview
         st.subheader("📋 Data Preview")
         st.dataframe(df.head())
+        render_result_download('en')
         
-        # ENHANCED SAVE SECTION WITH STORAGE INTEGRATION
-        add_enhanced_save_section(
+        # ENHANCED SAVE SECTION WITH STORAGE INTEGRATION (local only)
+        if not is_cloud(): add_enhanced_save_section(
             st.session_state.current_file, 
             df, 
             st.session_state.additional_data
         )
     
-    # CASE 2: Perform new analysis
-    else:
-        # Flag for file processing
-        processed_file = file_handler.display_file_selection_ui()
-        
-        # Process the selected file
-        if processed_file is not None:
-            try:
-                # Filename for YouTube ID extraction
-                filename = processed_file.name
-                file_handler.show_file_info(filename)
-                
-                # Extract YouTube video ID if present in filename
-                video_id = extract_video_id(filename)
-                
-                # Show YouTube information if video ID was found
-                if video_id:
-                    display_youtube_info(video_id)
-                
-                # Load and clean data
-                with st.spinner("Loading and cleaning data..."):
-                    df, text_column = load_and_clean_data(processed_file)
-                    
-                    # Clean text for further analysis
-                    df = file_handler.apply_text_cleaning(df, text_column)
-                
-                # Save in Session State
-                st.session_state.current_file = filename
-                st.session_state.df = df
-                st.session_state.text_column = text_column
-                
-                # Create app tabs based on available modules
-                # Create app tabs based on available modules
-                tabs_to_create = ["📊 Sentiment Analysis"]
-
-                if BERTOPIC_AVAILABLE and TOPIC_ANALYSIS_AVAILABLE:
-                    tabs_to_create.append("🏷️ Topic Analysis")
-
-                if EMOTION_ANALYSIS_AVAILABLE:
-                    tabs_to_create.append("😊 Emotion Analysis")
-
-                if EMOTION_COMPARISON_AVAILABLE:
-                    tabs_to_create.append("⚖️ Emotion Model Comparison")
-
-                if SPECIAL_ANALYSIS_AVAILABLE:
-                    tabs_to_create.append("🔍 Special Analyses")
-
-                # Create tabs
-                if len(tabs_to_create) > 1:
-                    main_tabs = st.tabs(tabs_to_create)
-                else:
-                    main_tabs = [st.container()]
-                
-                # Tab 1: Sentiment Analysis
-                with main_tabs[0]:
-                    # Display model information
-                    display_model_info("sentiment")
-                    
-                    with st.spinner("Performing sentiment analysis..."):
-                        if SENTIMENT_ANALYSIS_AVAILABLE and sentiment_pipeline:
-                            df = analyze_sentiment(df, text_column, sentiment_pipeline)
-                            display_sentiment_results(df, text_column)
-                        else:
-                            # Fallback to simplified version
-                            df = analyze_sentiment_fallback(df, text_column)
-                            display_sentiment_results_fallback(df, text_column)
-                
-                # Check if more tabs can be displayed
-                tab_index = 1
-                
-                # Additional data for persistent storage
-                additional_data = {}
-                
-                # Continue with extended analysis if modules are available
-                if BERTOPIC_AVAILABLE and TOPIC_ANALYSIS_AVAILABLE and tab_index < len(main_tabs):
-                    try:
-                        # Prepare text for topic modeling
-                        with st.spinner("Performing topic analysis..."):
-                            df, topic_model, topic_info, topic_df, topic_labels = prepare_topic_analysis(df, text_column)
-                            
-                            # Save topic model and information for later use
-                            additional_data['topic_model'] = topic_model
-                            additional_data['topic_info'] = topic_info
-                            additional_data['topic_df'] = topic_df
-                            additional_data['topic_labels'] = topic_labels
-                        
-                        # Analyze emotions if model is available
-                        if EMOTION_ANALYSIS_AVAILABLE and emotion_classifier is not None:
-                            with st.spinner("Performing emotion analysis..."):
-                                # Hole empfohlene Parameter (falls verfügbar)
-                                from utils.emotion_analysis_english import get_optimized_parameters
-                                params = get_optimized_parameters()
-                                df = prepare_emotion_analysis(df, emotion_classifier, 
-                                                            model_weight=params['model_weight'],
-                                                            confidence_threshold=params['confidence_threshold'])                             
-                        
-                        # Tab 2: Topic analysis
-                        with main_tabs[tab_index]:
-                            # Display model information
-                            display_model_info("topic")
-                            display_topic_analysis(df, topic_model, topic_df, topic_info, topic_labels)
-                        
-                        tab_index += 1
-                        
-                        # Tab 3: Emotion analysis (if available)
-                        if EMOTION_ANALYSIS_AVAILABLE and tab_index < len(main_tabs):
-                            with main_tabs[tab_index]:
-                                # Display model information
-                                display_model_info("emotion")
-                                
-                                if emotion_classifier is not None and 'dominant_emotion' in df.columns:
-                                    display_emotion_analysis(df, text_column, topic_model, topic_labels)
-                                else:
-                                    st.warning("Emotion analysis could not be performed. Emotion model is not available.")
-                            
-                            tab_index += 1
-                        
-                        # Tab 4: Emotion model comparison (if available)
-                        if EMOTION_COMPARISON_AVAILABLE and tab_index < len(main_tabs):
-                            with main_tabs[tab_index]:
-                                # Display model information
-                                display_model_info("emotion")
-                                
-                                if emotion_classifier is not None:
-                                    display_emotion_comparison(df, emotion_classifier)
-                                else:
-                                    st.warning("Emotion model comparison could not be performed. Emotion model is not available.")
-                            
-                            tab_index += 1
-                        
-                        # Tab 5: Special analyses (if available)
-                        if SPECIAL_ANALYSIS_AVAILABLE and tab_index < len(main_tabs):
-                            with main_tabs[tab_index]:
-                                if 'topic' in df.columns:
-                                    display_special_analysis(df, text_column, topic_labels)
-                                else:
-                                    st.warning("Special analyses require topic data that is not available.")
-                    
-                    except Exception as e:
-                        st.error(f"Error in extended analysis: {e}")
-                        st.error(traceback.format_exc())
-                
-                # Update DataFrame in Session State
-                st.session_state.df = df
-                
-                # Save additional data in Session State
-                st.session_state.additional_data = additional_data
-                
-                # Show data preview
-                st.subheader("📋 Data Preview")
-                preview_df = file_handler.get_preview(df)
-                st.dataframe(preview_df)
-                
-                # ENHANCED SAVE SECTION WITH STORAGE INTEGRATION
-                add_enhanced_save_section(filename, df, additional_data)
-                
-            except Exception as e:
-                st.error(f"❌ Error loading or processing file: {e}")
-                st.error(traceback.format_exc())
+    # Run your own analysis (below the examples) – replaces the former CASE 2
+    render_live_section('en', get_files_from_data_folder())
     
     # Debug section (only with HEREDUCATION_DEBUG=1 or secrets debug=true)
     if is_debug():

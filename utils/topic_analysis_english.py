@@ -396,8 +396,15 @@ def merge_topics_to_dataframe(df: pd.DataFrame, topic_df: pd.DataFrame) -> pd.Da
     Returns:
         DataFrame with topic information
     """
-    # Create topic mapping
-    topic_map = dict(zip(topic_df.index, topic_df['topic']))
+    # Create topic mapping.
+    # topic_df was filtered and re-indexed (0..n-1) in validate_text_data, so its index
+    # does not match df.index once a comment was filtered out. Map by the original
+    # positions of the valid rows instead (fix 25.09.2026: topics were shifted).
+    valid_index = df.index[df['clean_text'].str.len() > MIN_TEXT_LENGTH]
+    if len(valid_index) == len(topic_df):
+        topic_map = dict(zip(valid_index, topic_df['topic']))
+    else:
+        topic_map = dict(zip(topic_df.index, topic_df['topic']))
     df['topic'] = df.index.map(lambda x: topic_map.get(x, -1))
     
     return df

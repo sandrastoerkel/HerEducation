@@ -12,3 +12,6 @@ saved_results_english/
 .DS_Store
 # Secrets
 cookies.txt
+
+# Test-Cache
+.pytest_cache/

@@ -1,0 +1,8 @@
+# Streamlit-Konfiguration (HerEducation)
+[server]
+# Kein Datei-Watcher: In der Cloud aendern sich die Quelldateien nicht; der Watcher
+# durchsuchte bei jedem Seitenaufruf alle transformers-Module (torchvision-Tracebacks, CPU-Last).
+fileWatcherType = "none"
+
+# Upload-Grenze fuer die Kommentaranalyse (MB), passend zu MAX_UPLOAD_MB in utils/live_comment_analysis.py
+maxUploadSize = 10

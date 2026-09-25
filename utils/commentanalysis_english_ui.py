@@ -85,7 +85,7 @@ class UIConstants:
     
     📌 **Note**: This analysis is specifically designed for English text. Comments in other languages will be automatically filtered out.
     
-    Select a CSV file from the data folder to start the analysis.
+    Above you see a finished example analysis; further down you can run your own analysis.
     """
     
     # Model information

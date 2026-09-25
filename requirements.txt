@@ -9,9 +9,16 @@ matplotlib>=3.7.0
 seaborn>=0.12.0
 
 # NLP & Machine Learning
-transformers>=4.30.0
-sentence-transformers>=2.2.0
-bertopic>=0.15.0
+# Exakt gepinnt (25.09.2026): Versionen aus der MESS1-Messung auf dem Mac (_bench/.venv).
+# Ungepinnt zieht jeder neue Cloud-Build die neueste Version; mit transformers 5.17
+# wirkt return_all_scores nicht mehr (Emotionsanalyse falsch/leer, behoben in
+# models/pipeline_adapters.py). Welche Version die Cloud aktuell hat: [OFFEN].
+torch==2.14.0
+transformers==5.17.0
+sentence-transformers==6.1.0
+bertopic==0.17.4
+hdbscan==0.8.44
+umap-learn==0.5.12
 nltk>=3.8.0
 langdetect>=1.0.9
 

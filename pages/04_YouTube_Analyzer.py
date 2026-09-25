@@ -530,7 +530,7 @@ def apply_youtube_styles():
             color: #9834eb;
         }
         .card {
-            background-color: white;
+            background-color: white; color: #1f2937;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.1);

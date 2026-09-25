@@ -16,7 +16,7 @@ from .indicators_viz_core import (
     calculate_current_data_for_year, calculate_regional_statistics,
     DEFAULT_CHART_HEIGHT, TALL_CHART_HEIGHT
 )
-from .indicators_viz_multilingual import get_text, get_legend_labels
+from .indicators_viz_multilingual import get_text, get_legend_labels, get_region_label
 
 
 # =============================================================================
@@ -52,13 +52,14 @@ def render_regional_distribution_chart(
     yes_percentages = [regional_stats[r].yes_percent for r in regions]
     partially_percentages = [regional_stats[r].partially_percent for r in regions]
     no_percentages = [regional_stats[r].no_percent for r in regions]
+    region_labels = [get_region_label(r, config.language) for r in regions]
     
     # Create stacked bar chart
     fig = go.Figure()
     
     fig.add_trace(go.Bar(
         name=legend_labels['Yes'],
-        x=regions,
+        x=region_labels,
         y=yes_percentages,
         marker_color=config.color_scheme[IndicatorStatus.YES],
         text=[f"{p:.1f}%" for p in yes_percentages] if config.show_percentages else None,
@@ -67,7 +68,7 @@ def render_regional_distribution_chart(
     
     fig.add_trace(go.Bar(
         name=legend_labels['Partially'],
-        x=regions,
+        x=region_labels,
         y=partially_percentages,
         marker_color=config.color_scheme[IndicatorStatus.PARTIALLY],
         text=[f"{p:.1f}%" for p in partially_percentages] if config.show_percentages else None,
@@ -76,7 +77,7 @@ def render_regional_distribution_chart(
     
     fig.add_trace(go.Bar(
         name=legend_labels['No'],
-        x=regions,
+        x=region_labels,
         y=no_percentages,
         marker_color=config.color_scheme[IndicatorStatus.NO],
         text=[f"{p:.1f}%" for p in no_percentages] if config.show_percentages else None,
@@ -134,7 +135,7 @@ def render_regional_details(
     legend_labels = get_legend_labels(language)
     
     for region, countries in regionen.items():
-        with st.expander(get_text("region_detail_view", language, region)):
+        with st.expander(get_text("region_detail_view", language, get_region_label(region, language))):
             region_df = regional_data[regional_data['Land'].isin(countries)]
             
             if not region_df.empty:
@@ -169,7 +170,7 @@ def render_regional_details(
                 st.markdown(f"##### {get_text('countries_with_no', language)}")
                 st.markdown(", ".join(sorted(no_countries)) if no_countries else get_text("no_countries_found", language))
             else:
-                st.info(get_text("no_data_available", language, region))
+                st.info(get_text("no_data_available", language, get_region_label(region, language)))
 
 
 # =============================================================================

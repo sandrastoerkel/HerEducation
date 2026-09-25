@@ -1400,7 +1400,7 @@ def main():
     # Hook für Leser
     if st.session_state.language == "DE":
         st.markdown("""
-        <div class="normal-text" style="font-style: italic; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 10px;">
+        <div class="normal-text" style="font-style: italic; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; color: #1f2937; border-radius: 10px;">
         💡 <strong>Die große Frage:</strong> Wie bringt man 7,5 Millionen Mädchen bei, dass sie mehr wert sind, 
         als ihre Kultur ihnen manchmal vermittelt – ohne ihre Kultur anzugreifen?
         <br><br>
@@ -1409,7 +1409,7 @@ def main():
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div class="normal-text" style="font-style: italic; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 10px;">
+        <div class="normal-text" style="font-style: italic; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; color: #1f2937; border-radius: 10px;">
         💡 <strong>The big question:</strong> How do you teach 7.5 million girls that they're worth more 
         than their culture sometimes tells them – without attacking their culture?
         <br><br>
@@ -1461,7 +1461,7 @@ def main():
     # Call-to-Action am Ende
     if st.session_state.language == "DE":
         st.markdown("""
-        <div class="normal-text" style="margin-top: 30px; padding: 20px; background-color: #e8f5e8; border-radius: 10px; text-align: center;">
+        <div class="normal-text" style="margin-top: 30px; padding: 20px; background-color: #e8f5e8; color: #1f2937; border-radius: 10px; text-align: center;">
         <strong>🚀 Bereit, Geschichte zu schreiben?</strong><br>
         HerEducation ist mehr als eine YouTube-Analyse-Tool – es ist eine Bewegung. Eine Bewegung, die zeigt: 
         Respekt und Veränderung können Hand in Hand gehen.
@@ -1469,7 +1469,7 @@ def main():
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div class="normal-text" style="margin-top: 30px; padding: 20px; background-color: #e8f5e8; border-radius: 10px; text-align: center;">
+        <div class="normal-text" style="margin-top: 30px; padding: 20px; background-color: #e8f5e8; color: #1f2937; border-radius: 10px; text-align: center;">
         <strong>🚀 Ready to make history?</strong><br>
         HerEducation is more than a YouTube analysis tool – it's a movement. A movement that shows: 
         Respect and change can go hand in hand.

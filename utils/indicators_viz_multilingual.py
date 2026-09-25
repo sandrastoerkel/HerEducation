@@ -282,6 +282,24 @@ def get_text(key: str, language: str = "DE", *args) -> str:
         return key
 
 
+# Region names: keys in IndicatorsConfig.REGIONEN are German; display them per language.
+REGION_NAMES = {
+    "EN": {
+        "Afrika": "Africa",
+        "Asien": "Asia",
+        "Europa": "Europe",
+        "Nordamerika": "North America",
+        "Südamerika": "South America",
+        "Ozeanien": "Oceania",
+    }
+}
+
+
+def get_region_label(region: str, language: str = "DE") -> str:
+    """Return the display name of a region (keys stay German internally)."""
+    return REGION_NAMES.get(language, {}).get(region, region)
+
+
 def get_status_labels(language: str = "DE") -> Dict[str, str]:
     """
     Get status labels for the specified language.

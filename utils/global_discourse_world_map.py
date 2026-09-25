@@ -317,7 +317,7 @@ class GlobalDiscourseWorldMap:
         """Renders map legend"""
         st.markdown("""
         <div style="display: flex; justify-content: center; margin: 20px 0; 
-                    background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    background-color: #f8f9fa; color: #1f2937; padding: 15px; border-radius: 8px;">
             <div style="display: flex; align-items: center; margin: 0 20px;">
                 <div style="width: 20px; height: 20px; border-radius: 50%; margin-right: 8px; 
                            background-color: rgb(46, 139, 87);"></div>

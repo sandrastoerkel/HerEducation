@@ -247,7 +247,7 @@ class CardStyles(StyleComponent):
             border-left: 4px solid {self.colors.primary_blue};
             padding: {StyleConstants.SPACING_SMALL}rem {StyleConstants.SPACING_MEDIUM}rem;
             margin: {StyleConstants.SPACING_MEDIUM}rem 0;
-            background-color: #f8f9fa;
+            background-color: #f8f9fa; color: #1f2937;
             border-radius: 0 {StyleConstants.SMALL_BORDER_RADIUS}px {StyleConstants.SMALL_BORDER_RADIUS}px 0;
         }}
         
@@ -488,7 +488,7 @@ class ChangeIndicatorStyles(StyleComponent):
             padding: {StyleConstants.SPACING_SMALL}rem {StyleConstants.SPACING_MEDIUM}rem;
             margin-bottom: {StyleConstants.SPACING_SMALL}rem;
             border-left: 3px solid;
-            background-color: #f8f9fa;
+            background-color: #f8f9fa; color: #1f2937;
         }}
         
         .change-item-positive {{

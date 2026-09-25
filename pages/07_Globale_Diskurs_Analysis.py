@@ -12,6 +12,7 @@ comment analyses with Smart Topic Labels.
 """
 
 import streamlit as st
+from utils.debug_flag import is_debug
 import pandas as pd
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -98,22 +99,24 @@ class GlobalDiscourseAnalysisManager:
         • Alternative names
         """)
         
-        if st.sidebar.button("🔧 Country Detection Debug"):
-            render_country_detection_debug(self.data_loader.country_detector)
+        # Developer controls: only visible with HEREDUCATION_DEBUG=1 or secrets debug=true
+        if is_debug():
+            if st.sidebar.button("🔧 Country Detection Debug"):
+                render_country_detection_debug(self.data_loader.country_detector)
         
-        if st.sidebar.button("🗑️ Clear Cache"):
-            self.data_loader.country_detector.clear_cache()
-            st.sidebar.success("Country Cache cleared")
-            st.rerun()
+            if st.sidebar.button("🗑️ Clear Cache"):
+                self.data_loader.country_detector.clear_cache()
+                st.sidebar.success("Country Cache cleared")
+                st.rerun()
         
-        # Show cache statistics
-        stats = self.data_loader.country_detector.get_country_statistics()
-        if stats:
-            st.sidebar.write("**Cached Countries:**")
-            for country, count in stats.items():
-                st.sidebar.write(f"• {country}: {count}")
-        else:
-            st.sidebar.write("*No countries in cache yet*")
+            # Show cache statistics
+            stats = self.data_loader.country_detector.get_country_statistics()
+            if stats:
+                st.sidebar.write("**Cached Countries:**")
+                for country, count in stats.items():
+                    st.sidebar.write(f"• {country}: {count}")
+            else:
+                st.sidebar.write("*No countries in cache yet*")
         
         # Additional info
         st.sidebar.markdown("---")
@@ -876,46 +879,47 @@ def main():
                 st.json(world_map_data)
         
         # Enhanced debug information (with world map info)
-        with st.expander("🔧 Enhanced Debug Information with World Map Status", expanded=False):
-            debug_info = {
-                "system_info": {
-                    "available_files": len(analysis_files),
-                    "selected_files": len(selected_files),
-                    "loaded_countries": list(valid_countries.keys()),
-                    "total_comments": total_comments,
-                    "languages": list(set(data.language for data in valid_countries.values()))
-                },
-                "enhanced_features": {
-                    "country_detection_enabled": True,
-                    "enhanced_theme_search": True,
-                    "emotion_categorization": True,
-                    "sample_comments": True,
-                    "country_rankings": True,
-                    "world_map_integration": True
-                },
-                "world_map_status": {
-                    "total_supported_countries": len(WorldMapConstants.COUNTRY_COORDINATES),
-                    "analyzed_countries_with_coords": countries_with_coords,
-                    "coverage_percentage": f"{countries_with_coords/len(valid_countries)*100:.1f}%" if valid_countries else "0%",
-                    "missing_coordinates": [
-                        c for c in valid_countries.keys() 
-                        if c not in WorldMapConstants.COUNTRY_COORDINATES
-                    ]
-                },
-                "data_quality": {
-                    "countries_with_smart_labels": sum(
-                        1 for data in valid_countries.values() 
-                        if any(f.has_smart_labels for f in data.analysis_files)
-                    ),
-                    "countries_with_emotions": sum(
-                        1 for data in valid_countries.values()
-                        if data.emotion_distribution
-                    ),
-                    "average_comments_per_country": total_comments / len(valid_countries)
+        if is_debug():
+            with st.expander("🔧 Enhanced Debug Information with World Map Status", expanded=False):
+                debug_info = {
+                    "system_info": {
+                        "available_files": len(analysis_files),
+                        "selected_files": len(selected_files),
+                        "loaded_countries": list(valid_countries.keys()),
+                        "total_comments": total_comments,
+                        "languages": list(set(data.language for data in valid_countries.values()))
+                    },
+                    "enhanced_features": {
+                        "country_detection_enabled": True,
+                        "enhanced_theme_search": True,
+                        "emotion_categorization": True,
+                        "sample_comments": True,
+                        "country_rankings": True,
+                        "world_map_integration": True
+                    },
+                    "world_map_status": {
+                        "total_supported_countries": len(WorldMapConstants.COUNTRY_COORDINATES),
+                        "analyzed_countries_with_coords": countries_with_coords,
+                        "coverage_percentage": f"{countries_with_coords/len(valid_countries)*100:.1f}%" if valid_countries else "0%",
+                        "missing_coordinates": [
+                            c for c in valid_countries.keys() 
+                            if c not in WorldMapConstants.COUNTRY_COORDINATES
+                        ]
+                    },
+                    "data_quality": {
+                        "countries_with_smart_labels": sum(
+                            1 for data in valid_countries.values() 
+                            if any(f.has_smart_labels for f in data.analysis_files)
+                        ),
+                        "countries_with_emotions": sum(
+                            1 for data in valid_countries.values()
+                            if data.emotion_distribution
+                        ),
+                        "average_comments_per_country": total_comments / len(valid_countries)
+                    }
                 }
-            }
             
-            st.json(debug_info)
+                st.json(debug_info)
     
     except Exception as e:
         st.error(f"❌ Unexpected error: {str(e)}")

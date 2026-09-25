@@ -82,7 +82,7 @@ st.markdown("""
     text-align: center;
 }
 .tech-card {
-    background: #f8f9fa;
+    background: #f8f9fa; color: #1f2937;
     border-left: 4px solid #2E86AB;
     padding: 20px;
     margin: 15px 0;
@@ -96,21 +96,21 @@ st.markdown("""
     margin: 20px 0;
 }
 .achievement-card {
-    background: white;
+    background: white; color: #1f2937;
     padding: 20px;
     border-radius: 12px;
     border-left: 4px solid #A23B72;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 .model-specs {
-    background: #e8f4fd;
+    background: #e8f4fd; color: #1f2937;
     padding: 20px;
     border-radius: 10px;
     border: 2px solid #2E86AB;
     margin: 15px 0;
 }
 .pipeline-flow {
-    background: linear-gradient(45deg, #f8f9fa, #e8f4fd);
+    background: linear-gradient(45deg, #f8f9fa, #e8f4fd); color: #1f2937;
     padding: 25px;
     border-radius: 15px;
     margin: 20px 0;

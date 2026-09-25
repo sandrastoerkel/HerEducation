@@ -188,7 +188,7 @@ class HeaderRenderer:
         """Render sentiment model information"""
         info = UIConstants.SENTIMENT_MODEL_INFO
         st.markdown(f"""
-        <div style="background-color: #f0f9ff; padding: 15px; border-radius: 10px; border-left: 4px solid {self.config.theme_color_secondary}; margin-bottom: 20px;">
+        <div style="background-color: #f0f9ff; color: #1f2937; padding: 15px; border-radius: 10px; border-left: 4px solid {self.config.theme_color_secondary}; margin-bottom: 20px;">
             <h4 style="color: #0369a1; margin-top: 0;">{info['title']}</h4>
             <ul style="margin-bottom: 0; color: #475569;">
                 <li><strong>Model:</strong> {info['model']}</li>
@@ -207,7 +207,7 @@ class HeaderRenderer:
         emotions_list = "".join([f"<li>{emotion}</li>" for emotion in info['emotions']])
         
         st.markdown(f"""
-        <div style="background-color: #fdf4ff; padding: 15px; border-radius: 10px; border-left: 4px solid #d946ef; margin-bottom: 20px;">
+        <div style="background-color: #fdf4ff; color: #1f2937; padding: 15px; border-radius: 10px; border-left: 4px solid #d946ef; margin-bottom: 20px;">
             <h4 style="color: #a21caf; margin-top: 0;">{info['title']}</h4>
             <ul style="margin-bottom: 0; color: #475569;">
                 <li><strong>Model:</strong> {info['model']}</li>
@@ -230,7 +230,7 @@ class HeaderRenderer:
         components_list = "".join([f"<li>{comp}</li>" for comp in info['components']])
         
         st.markdown(f"""
-        <div style="background-color: #f0fdf4; padding: 15px; border-radius: 10px; border-left: 4px solid {self.config.theme_color_success}; margin-bottom: 20px;">
+        <div style="background-color: #f0fdf4; color: #1f2937; padding: 15px; border-radius: 10px; border-left: 4px solid {self.config.theme_color_success}; margin-bottom: 20px;">
             <h4 style="color: #16a34a; margin-top: 0;">{info['title']}</h4>
             <ul style="margin-bottom: 0; color: #475569;">
                 <li><strong>Model:</strong> {info['model']}</li>

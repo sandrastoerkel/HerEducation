@@ -399,7 +399,7 @@ def create_world_map(df: pd.DataFrame, selected_indicator: str, selected_year: i
 def display_map_legend():
     """Zeigt Karten-Legende an"""
     st.markdown("""
-    <div style="display: flex; justify-content: center; margin: 20px 0; background-color: #f8f9fa; padding: 10px; border-radius: 8px;">
+    <div style="display: flex; justify-content: center; margin: 20px 0; background-color: #f8f9fa; color: #1f2937; padding: 10px; border-radius: 8px;">
         <div style="display: flex; align-items: center; margin: 0 15px;">
             <div style="width: 20px; height: 20px; border-radius: 4px; margin-right: 8px; background-color: rgba(0, 200, 0, 0.8);"></div>
             <span>Yes</span>

@@ -1,4 +1,5 @@
 import streamlit as st
+from utils.debug_flag import is_debug
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -682,8 +683,9 @@ def main():
                 st.error(f"❌ Error loading or processing file: {e}")
                 st.error(traceback.format_exc())
     
-    # Debug section
-    add_debug_section()
+    # Debug section (only with HEREDUCATION_DEBUG=1 or secrets debug=true)
+    if is_debug():
+        add_debug_section()
     
     # Display copyright footer
     ui_manager.display_footer_copyright()

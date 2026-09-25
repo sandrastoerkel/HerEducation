@@ -41,13 +41,13 @@ DEFAULT_LINGUISTIC_WEIGHT = 0.3
 
 # Evaluation Criteria Colors
 EVALUATION_COLORS = {
-    "Sehr gut": "background-color: #D5F5E3",
-    "Gut": "background-color: #D5F5E3; opacity: 0.7",
-    "Mittel": "background-color: #FCF3CF",
-    "Begrenzt": "background-color: #FADBD8; opacity: 0.7",
-    "Niedrig": "background-color: #FADBD8",
-    "Einfach": "background-color: #D5F5E3",
-    "Aufwändig": "background-color: #FADBD8"
+    "Sehr gut": "background-color: #D5F5E3; color: #1f2937",
+    "Gut": "background-color: #D5F5E3; opacity: 0.7; color: #1f2937",
+    "Mittel": "background-color: #FCF3CF; color: #1f2937",
+    "Begrenzt": "background-color: #FADBD8; opacity: 0.7; color: #1f2937",
+    "Niedrig": "background-color: #FADBD8; color: #1f2937",
+    "Einfach": "background-color: #D5F5E3; color: #1f2937",
+    "Aufwändig": "background-color: #FADBD8; color: #1f2937"
 }
 
 # =====================================================================================

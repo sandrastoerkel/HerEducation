@@ -5,6 +5,7 @@ BEIBEHALTEN: Komplette ursprüngliche Logik und Struktur
 """
 
 import streamlit as st
+from utils.debug_flag import is_debug
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -709,8 +710,9 @@ def main():
                 st.error(f"❌ Fehler beim Laden oder Verarbeiten der Datei: {e}")
                 st.error(traceback.format_exc())
     
-    # Debug section (UNVERÄNDERT)
-    add_debug_section()
+    # Debug section (nur mit HEREDUCATION_DEBUG=1 oder secrets debug=true)
+    if is_debug():
+        add_debug_section()
     
     # ===== MODERNER FOOTER (ersetzt CSS-Duplikation) =====
     display_standard_footer()

@@ -131,7 +131,7 @@ class KommentaranalyseUI:
         """
         if model_type == "sentiment":
             st.markdown("""
-            <div style="background-color: #f0f9ff; padding: 15px; border-radius: 10px; border-left: 4px solid #0ea5e9; margin-bottom: 20px;">
+            <div style="background-color: #f0f9ff; color: #1f2937; padding: 15px; border-radius: 10px; border-left: 4px solid #0ea5e9; margin-bottom: 20px;">
                 <h4 style="color: #0369a1; margin-top: 0;">🤖 Sentiment Analysis Model</h4>
                 <ul style="margin-bottom: 0; color: #475569;">
                     <li><strong>Modell:</strong> oliverguhr/german-sentiment-bert</li>
@@ -145,7 +145,7 @@ class KommentaranalyseUI:
         
         elif model_type == "emotion":
             st.markdown("""
-            <div style="background-color: #fdf4ff; padding: 15px; border-radius: 10px; border-left: 4px solid #d946ef; margin-bottom: 20px;">
+            <div style="background-color: #fdf4ff; color: #1f2937; padding: 15px; border-radius: 10px; border-left: 4px solid #d946ef; margin-bottom: 20px;">
                 <h4 style="color: #a21caf; margin-top: 0;">😊 Emotionsanalyse-Modell</h4>
                 <ul style="margin-bottom: 0; color: #475569;">
                     <li><strong>Modell:</strong> visegradmedia-emotion/Emotion_RoBERTa_german6_v7</li>
@@ -169,7 +169,7 @@ class KommentaranalyseUI:
         
         elif model_type == "topic":
             st.markdown("""
-            <div style="background-color: #f0fdf4; padding: 15px; border-radius: 10px; border-left: 4px solid #22c55e; margin-bottom: 20px;">
+            <div style="background-color: #f0fdf4; color: #1f2937; padding: 15px; border-radius: 10px; border-left: 4px solid #22c55e; margin-bottom: 20px;">
                 <h4 style="color: #16a34a; margin-top: 0;">🏷️ Themenanalyse-Modell</h4>
                 <ul style="margin-bottom: 0; color: #475569;">
                     <li><strong>Modell:</strong> BERTopic mit distiluse-base-multilingual-cased-v1</li>

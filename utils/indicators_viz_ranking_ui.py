@@ -16,7 +16,7 @@ from .indicators_viz_ranking_core import (
     split_netto_ranking, calculate_filtered_country_results, get_countries_with_changes,
     get_country_changes_by_year
 )
-from .indicators_viz_multilingual import get_text
+from .indicators_viz_multilingual import get_text, get_region_label
 
 
 # =============================================================================
@@ -58,7 +58,8 @@ def render_ranking_filter_options(
         filter_by_region = st.checkbox(get_text("filter_by_region_checkbox", language), value=False)
         filter_region = None
         if filter_by_region:
-            filter_region = st.selectbox(get_text("select_region", language), list(regionen.keys()))
+            filter_region = st.selectbox(get_text("select_region", language), list(regionen.keys()),
+                                         format_func=lambda r: get_region_label(r, language))
         st.markdown('</div>', unsafe_allow_html=True)
     
     return filter_indicator, filter_region

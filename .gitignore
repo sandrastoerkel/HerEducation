@@ -10,3 +10,5 @@ saved_results/
 saved_results_english/
 # System files
 .DS_Store
+# Secrets
+cookies.txt

@@ -298,6 +298,7 @@ def test_reader_all_repo_files():
         texts = df["comment_text"]
         assert not texts.str.lstrip().str.startswith("text:").any()
         assert not texts.str.contains("\\n", regex=False).any()
+        assert not texts.str.contains(r"(?<!\S)@(?!…)\w", regex=True).any()   # keine @-Namen
         if path.read_bytes()[:1] != b"{":   # CSV mit Kopfzeile: Text != Autor
             header = pd.read_csv(path, dtype=str, keep_default_na=False, encoding="utf-8-sig")
             assert not texts.isin(set(header["author"])).any()
@@ -456,3 +457,12 @@ def test_number_format_only_touches_numbers():
     assert fmt_int(2082, "de") == "2.082" and fmt_int(2082, "en") == "2,082"
     assert sample_note("de", 2082, 300) == ("Die Datei enthält 2.082 Kommentare – analysiert wurde "
                                             "eine feste Stichprobe von 300.")
+
+
+def test_mentions_are_masked():
+    from utils.comment_file_reader import mask_mentions
+    assert mask_mentions("@max_m danke!") == "@… danke!"
+    assert mask_mentions("Hallo @Anna-Lena.K. wie gehts") == "Hallo @…. wie gehts"
+    assert mask_mentions("mail an a@b.de") == "mail an a@b.de"
+    df = read_comments(b'{"text": "@someone_1 genau so"}\n')
+    assert list(df["comment_text"]) == ["@… genau so"]

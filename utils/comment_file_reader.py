@@ -16,9 +16,13 @@ Regeln:
   (Nummer des Datensatzes in der Datei, ab 1). Autor, Zeit, IDs usw. werden bewusst
   NICHT uebernommen (Datenvorschau zeigt keine Nutzernamen).
 - Leere Kommentare werden entfernt. Kein Treffer -> CommentFileError mit Grund.
+- YouTube-Namen in Antworten ("@name ...") werden durch "@…" ersetzt (Entscheidung Sandra
+  25.09.2026: keine Nutzernamen in der oeffentlichen Datenvorschau). Gilt fuer jedes @-Wort
+  am Textanfang oder nach einem Leerzeichen; E-Mail-Adressen bleiben unberuehrt.
 """
 import io
 import json
+import re
 from typing import List, Optional
 
 import pandas as pd
@@ -26,6 +30,13 @@ import pandas as pd
 # Reihenfolge = Prioritaet (Vergleich ohne Gross-/Kleinschreibung)
 TEXT_COLUMNS = ["text", "comment_text", "comment", "kommentar", "content", "body", "message", "textoriginal"]
 OUTPUT_COLUMN = "comment_text"
+MENTION_PATTERN = re.compile(r"(?<!\S)@[\w\-]+(?:\.[\w\-]+)*")
+MENTION_MASK = "@…"
+
+
+def mask_mentions(text: str) -> str:
+    """"@name danke!" -> "@… danke!" (Nutzernamen nicht anzeigen)."""
+    return MENTION_PATTERN.sub(MENTION_MASK, text)
 
 
 class CommentFileError(ValueError):
@@ -133,7 +144,7 @@ def read_comments(data: bytes, name: str = "") -> pd.DataFrame:
     for number, value in enumerate(texts, start=1):
         if value is None or (isinstance(value, float) and pd.isna(value)):
             continue
-        comment = str(value).replace("\r\n", "\n").replace("\r", "\n").strip()
+        comment = mask_mentions(str(value).replace("\r\n", "\n").replace("\r", "\n")).strip()
         if comment:
             rows.append({OUTPUT_COLUMN: comment, "original_line": number})
     if not rows:

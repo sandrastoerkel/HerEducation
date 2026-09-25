@@ -43,10 +43,14 @@ from utils.commentanalysis_english_persistence import CommentAnalysisPersistence
 from utils.commentanalysis_english_file_handler import CommentAnalysisFileHandler
 from utils.commentanalysis_english_youtube import CommentAnalysisYouTube
 from utils.commentanalysis_english_ui import CommentAnalysisUI
-from utils.example_analyses import render_example_picker
+from utils.example_analyses import render_example_picker, known_source_names, repo_files_for_language
+from utils.comment_file_reader import CommentFileError, error_message, read_comments
 from utils.live_comment_analysis import (
-    LiveAnalysisError, is_cloud, is_live_result, limit_comments, live_max_comments,
-    render_live_section, render_result_download, render_status, run_pending_analysis)
+    LiveAnalysisError, check_sentiment_result, fmt_int, free_other_language_models, is_cloud,
+    is_live_result, limit_comments, live_max_comments, render_live_section, render_result_download,
+    render_status, run_pending_analysis, sample_note)
+from utils.safe_log import log_exception
+from utils.video_info import render_video, video_id_for_display
 from models.pipeline_adapters import CachedPipeline
 
 # === INITIALIZE MANAGERS ===
@@ -251,21 +255,6 @@ def add_enhanced_save_section(filename, df, additional_data=None):
 # FALLBACK FUNCTIONS
 # ================================================================================
 
-def analyze_sentiment_fallback(df, text_column):
-    """Simplified fallback sentiment analysis"""
-    st.subheader("Sentiment Analysis (simplified)")
-    st.info("Using simplified sentiment analysis as the model could not be loaded.")
-    
-    # Random sentiment assignment for demonstration
-    import random
-    sentiments = ['positive', 'neutral', 'negative']
-    weights = [0.3, 0.4, 0.3]  # Weights for distribution
-    
-    df['sentiment'] = [random.choices(sentiments, weights=weights)[0] for _ in range(len(df))]
-    df['confidence'] = [random.uniform(0.6, 0.95) for _ in range(len(df))]
-    
-    return df
-
 def display_sentiment_results_fallback(df, text_column):
     """Displays sentiment analysis results (simplified version)"""
     st.subheader("Sentiment Distribution")
@@ -307,32 +296,71 @@ LIVE_STEPS_EN = [
 ]
 
 
+EMOTION_RESULT_COLUMNS = ['emotions', 'dominant_emotion']
+
+
+def _drop_emotion_columns(df):
+    """Remove all emotion columns (nothing detected -> no values in the export, review H1)."""
+    from utils.emotion_analysis_english import EmotionType
+    names = [e.value for e in EmotionType]
+    cols = [c for c in df.columns
+            if c in EMOTION_RESULT_COLUMNS or c in names
+            or any(c == f"{n}_linguistic" or c == f"{n}_sentence_count" for n in names)]
+    return df.drop(columns=cols, errors='ignore')
+
+
+def _keep_english(df, text_column, notes):
+    """Language filter without widgets (the old filter showed a checkbox inside the run)."""
+    try:
+        import langdetect  # noqa: F401
+    except ImportError:
+        notes.append("Language filter not available – all comments were analysed.")
+        return df
+    from utils.commentanalysis_english_language_detection import create_language_detection_manager
+    manager = create_language_detection_manager()
+    filtered, _ = manager.filter_english_comments(df, text_column, show_ui=False)
+    filtered = filtered.reset_index(drop=True)
+    skipped = len(df) - len(filtered)
+    if skipped:
+        notes.append(f"{fmt_int(skipped, 'en')} non-English comments were skipped.")
+    return filtered
+
+
 def run_live_analysis_en(file_obj, request, progress):
     """Full analysis in the previous order (sentiment -> topics -> emotions), without widgets.
 
     Uses the UI default values. The result is written to the session by run_pending_analysis()
-    only after the complete run.
+    only after the complete run. No st.stop()/widgets.
     """
     notes = []
 
     progress.step(0)
-    df, text_column = load_and_clean_data(file_obj)
-    if df is None or text_column is None or len(df) == 0:
-        raise LiveAnalysisError("No English comments were found in the file.")
-    df[text_column] = df[text_column].fillna("").astype(str)
-    df = df[df[text_column].str.len() > 0].reset_index(drop=True)
+    # Shared reader (review H2): format detected from content, text column by name, no prefix
+    try:
+        df = read_comments(request["data"], request.get("name", ""))
+    except CommentFileError as error:
+        raise LiveAnalysisError(error_message(error, "en"))
+    text_column = 'comment_text'
+    df = _keep_english(df, text_column, notes)
     if len(df) == 0:
         raise LiveAnalysisError("No English comments were found in the file.")
     df, total = limit_comments(df, live_max_comments())
     if len(df) < total:
-        notes.append(f"The file contains {total:,} comments – a fixed sample of {len(df):,} was analysed.")
+        notes.append(sample_note('en', total, len(df)))
     df = file_handler.apply_text_cleaning(df, text_column)
 
     progress.step(1)
     if not (MODELS_AVAILABLE and SENTIMENT_ANALYSIS_AVAILABLE):
         raise LiveAnalysisError("The sentiment model is not installed on this server.")
-    sentiment_pipeline = CachedPipeline(load_sentiment_model())
+    free_other_language_models('en')   # review M3: release the German models first
+    try:
+        sentiment_model = load_sentiment_model()
+    except Exception as error:  # noqa: BLE001
+        log_exception("live-analysis en", error, "load sentiment model")
+        raise LiveAnalysisError("The sentiment model could not be loaded. Please try again later.")
+    sentiment_pipeline = CachedPipeline(sentiment_model)
     df = perform_batch_sentiment_analysis(df.copy(), text_column, sentiment_pipeline, SentimentAnalysisConfig())
+    check_sentiment_result(df, 'en', notes)   # review M6
 
     additional_data = {}
     progress.step(2)
@@ -348,19 +376,23 @@ def run_live_analysis_en(file_obj, request, progress):
 
     progress.step(3)
     if EMOTION_ANALYSIS_AVAILABLE and MODELS_AVAILABLE:
-        emotion_classifier = load_emotion_model()
+        try:
+            emotion_classifier = load_emotion_model()
+        except Exception as error:  # noqa: BLE001 – review M2: failure is no longer cached
+            log_exception("live-analysis en", error, "load emotion model")
+            emotion_classifier = None
         if emotion_classifier is not None:
             df = prepare_emotion_analysis(df, emotion_classifier, show_config_ui=False)
             recognized = int(df['emotions'].notna().sum()) if 'emotions' in df.columns else 0
             if recognized == 0:
-                # do not show invented fallback values
-                df = df.drop(columns=['dominant_emotion'], errors='ignore')
+                # do not show or export invented fallback values
+                df = _drop_emotion_columns(df)
                 notes.append("Emotions could not be detected – the emotion tab is hidden.")
             elif recognized < len(df):
-                notes.append(f"Emotions detected for {recognized:,} of {len(df):,} comments "
-                             f"(very short comments are not rated).")
+                notes.append(f"Emotions detected for {fmt_int(recognized, 'en')} of {fmt_int(len(df), 'en')} "
+                             f"comments (very short comments are not rated).")
         else:
-            notes.append("The emotion model could not be loaded.")
+            notes.append("The emotion model could not be loaded – the emotion tab is hidden.")
 
     return {"df": df, "text_column": text_column, "additional_data": additional_data, "notes": notes}
 
@@ -441,13 +473,11 @@ def main():
         df = st.session_state.df
         text_column = st.session_state.text_column
         
-        # Extract YouTube ID from filename
+        # YouTube video only for included files/examples (review N6); info cached,
+        # embedded video only in the cloud (review M4)
         filename = st.session_state.current_file
-        video_id = extract_video_id(filename)
-        
-        # Show YouTube information
-        if video_id:
-            display_youtube_info(video_id)
+        video_id = video_id_for_display(filename, known_source_names('en') + repo_files_for_language('en'))
+        render_video(video_id, 'en', youtube_manager)
         
         # Create app tabs based on available data in df
         tabs_to_create = ["📊 Sentiment Analysis"]
@@ -565,7 +595,7 @@ def main():
         )
     
     # Run your own analysis (below the examples) – replaces the former CASE 2
-    render_live_section('en', get_files_from_data_folder())
+    render_live_section('en', repo_files_for_language('en'))   # review N5: English files only
     
     # Debug section (only with HEREDUCATION_DEBUG=1 or secrets debug=true)
     if is_debug():

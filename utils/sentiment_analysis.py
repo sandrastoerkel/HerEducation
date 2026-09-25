@@ -214,8 +214,10 @@ def perform_sentiment_analysis(df: pd.DataFrame, text_column: str, sentiment_pip
     df = _prepare_text_data(df, text_column, config.min_comment_length)
     
     if len(df) == 0:
+        # frueher st.stop(): in der Live-Analyse gehen danach alle Statusaenderungen verloren
+        # (Seite blieb auf "Analyse laeuft", Review M5). Aufrufer pruefen das leere Ergebnis.
         st.warning("Nach Filterung sind keine Kommentare übrig.")
-        st.stop()
+        return df
     
     # Progress tracking
     progress_bar = st.progress(0)

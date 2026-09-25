@@ -328,37 +328,15 @@ class EnglishCSVProcessor:
         Returns:
             Processed DataFrame
         """
-        start_time = time.time()
-        
+        # Review H2 (25.09.2026): frueher immer die ZWEITE Spalte (bei YouTube-Exporten mit
+        # Kopfzeile = Autor-Name; bei JSON Lines mit Endung .csv Praefix " text: ").
+        # Jetzt gemeinsamer Leser fuer DE + EN: utils/comment_file_reader.py
+        from utils.comment_file_reader import CommentFileError, read_comments
         try:
-            lines = file_content.strip().split('\n')
-            cleaned_data = []
-            
-            for line_index, line in enumerate(lines):
-                if line_index % EnglishFileHandlerConstants.PROGRESS_UPDATE_INTERVAL == 0:
-                    self.logger.debug(f"Processing line {line_index + 1}/{len(lines)}")
-                
-                # Robust CSV parsing
-                fields = self._parse_csv_line(line)
-                
-                # Extract comment (assuming second column)
-                comment = fields[1] if len(fields) > 1 else ""
-                
-                if comment.strip():  # Only add non-empty comments
-                    cleaned_data.append({
-                        'comment_text': comment.strip(),
-                        'original_line': line_index + 1,
-                        'field_count': len(fields)
-                    })
-            
-            processing_time = time.time() - start_time
-            self.logger.info(f"CSV processing completed in {processing_time:.2f}s")
-            
-            return pd.DataFrame(cleaned_data)
-            
-        except Exception as e:
-            self.logger.error(f"CSV processing error: {str(e)}")
-            return pd.DataFrame(columns=['comment_text', 'original_line', 'field_count'])
+            return read_comments(file_content.encode("utf-8"))
+        except CommentFileError as e:
+            self.logger.warning(f"CSV processing: {e.reason}")
+            return pd.DataFrame(columns=['comment_text', 'original_line'])
     
     def _parse_csv_line(self, line: str) -> List[str]:
         """
@@ -731,7 +709,7 @@ class EnglishFileHandlerManager:
     def _process_csv_file(self, uploaded_file: Any, start_time: float) -> ProcessingResult:
         """Process CSV file."""
         try:
-            file_content = uploaded_file.getvalue().decode('utf-8')
+            file_content = uploaded_file.getvalue().decode('utf-8', errors='replace')
             df = self.csv_processor.process_csv_content(file_content)
             
             if df.empty:

@@ -1135,7 +1135,7 @@ def contextual_emotion_detection(text: Any, emotion_classifier: Any) -> Optional
     
     # Get model-based emotion scores
     model_emotions = detect_emotions_in_chunks(validated_text, emotion_classifier, config)
-    if model_emotions is None:
+    if not model_emotions:  # None oder {} (kein Chunk bewertet) -> nicht erkannt (K1)
         return None
     
     # Perform linguistic analysis

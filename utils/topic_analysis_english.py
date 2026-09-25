@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import re
 import ast
 import traceback
+from utils.safe_log import log_exception
 from wordcloud import WordCloud
 from typing import Dict, List, Tuple, Optional, Any, Union
 from dataclasses import dataclass, field
@@ -238,7 +239,7 @@ def train_topic_model(topic_model: Any, texts: List[str]) -> Tuple[List[int], An
         return topics, probs
     except Exception as e:
         st.error(f"Error training BERTopic model: {str(e)}")
-        st.error(traceback.format_exc())
+        log_exception("topic-analysis en", e)
         raise
 
 
@@ -432,7 +433,7 @@ def parse_topic_dictionary(dict_string: str) -> Optional[Dict[int, str]]:
             
     except Exception as e:
         st.error(f"Error parsing dictionary: {str(e)}")
-        st.error(traceback.format_exc())
+        log_exception("topic-analysis en", e)
         return None
 
 
@@ -624,7 +625,7 @@ def render_sentiment_by_topic_chart(df: pd.DataFrame, topic_labels: Dict[int, st
         
     except Exception as e:
         st.error(f"Error in sentiment-per-topic analysis: {str(e)}")
-        st.error(traceback.format_exc())
+        log_exception("topic-analysis en", e)
 
 
 # =============================================================================
@@ -830,12 +831,12 @@ def prepare_topic_analysis(df: pd.DataFrame, text_column: str) -> Tuple[pd.DataF
                     
                 except Exception as e:
                     st.error(f"Error training BERTopic model: {str(e)}")
-                    st.error(traceback.format_exc())
+                    log_exception("topic-analysis en", e)
                     return df, None, None, None, None
                     
     except Exception as e:
         st.error(f"Error preparing topic analysis: {str(e)}")
-        st.error(traceback.format_exc())
+        log_exception("topic-analysis en", e)
         return df, None, None, None, None
 
 

@@ -227,7 +227,232 @@ def test_empty_file_fails_honestly(fake_models, page, lang):
     at.run()
     assert not at.exception, at.exception
     assert at.session_state["result_source"] == "example"
-    status = at.session_state[f"live_{lang}_status"]
-    assert status in (None, "failed", "interrupted")
+    # Review N2/M5: ehrlich "failed" (nicht "interrupted"), Meldung wurde angezeigt
+    assert at.session_state[f"live_{lang}_error"]
     warnings = "\n".join(str(w.value) for w in at.warning)
-    assert warnings  # es gibt eine Meldung
+    assert ("keine Kommentare" in warnings) or ("No comments" in warnings), warnings
+
+
+# ---------------------------------------------------------------------------
+# K1 (25.09.2026): Leser (H2), keine Zufalls-Emotionen (H1), M2–M6, N3, N5, N6, N8
+# ---------------------------------------------------------------------------
+
+from utils.comment_file_reader import CommentFileError, read_comments  # noqa: E402
+
+COMMENTS_DIR = ROOT / "data" / "comments"
+
+
+def _run_request(page, lang, data, name):
+    at = AppTest.from_file(page, default_timeout=TIMEOUT)
+    at.run()
+    at.session_state[f"live_{lang}_request"] = {"data": data, "name": name, "lang": lang}
+    at.session_state[f"live_{lang}_status"] = "pending"
+    at.run()
+    assert not at.exception, at.exception
+    return at
+
+
+def _warnings(at):
+    return "\n".join(str(w.value) for w in at.warning)
+
+
+def test_reader_header_csv_uses_text_column_not_second_column():
+    data = ("\ufeffcomment_id,author,time,likes_count,text\n"
+            "a1,@someone,1 year ago,3,\"This is the actual comment, with a comma\"\n"
+            "a2,@other,2 years ago,0,\"Line one\nline two\"\n").encode("utf-8")
+    df = read_comments(data, "x.csv")
+    assert list(df.columns) == ["comment_text", "original_line"]
+    assert list(df["comment_text"]) == ["This is the actual comment, with a comma", "Line one\nline two"]
+    assert not df["comment_text"].str.startswith("@").any()
+
+
+def test_reader_jsonl_with_csv_extension_has_no_prefix():
+    data = b'{"cid": "1", "text": "Hallo \\"Welt\\"\\nzweite Zeile", "author": "@x"}\n{"cid": "2", "text": "  "}\n'
+    df = read_comments(data, "comments.csv")
+    assert list(df["comment_text"]) == ['Hallo "Welt"\nzweite Zeile']
+    assert list(df["original_line"]) == [1]
+
+
+def test_reader_json_list_semicolon_csv_and_bad_bytes():
+    assert list(read_comments(b'[{"comment": "a"}, {"comment": "b"}]')["comment_text"]) == ["a", "b"]
+    assert list(read_comments("id;Kommentar\n1;Grüße\n".encode("utf-8"))["comment_text"]) == ["Grüße"]
+    df = read_comments("text\nK\xe4se\n".encode("latin-1"))   # kein UTF-8 -> ersetzt, kein Absturz
+    assert len(df) == 1 and "\ufffd" in df["comment_text"][0]
+
+
+@pytest.mark.parametrize("data,reason", [(b"", "empty"), (b"a,b\n1,2\n", "no_text_column"),
+                                         (b"text\n\n", "empty")])
+def test_reader_errors(data, reason):
+    with pytest.raises(CommentFileError) as info:
+        read_comments(data)
+    assert info.value.reason == reason
+
+
+def test_reader_all_repo_files():
+    """Alle mitgelieferten Dateien: keine Praefixe, keine Escape-Reste, keine Autor-Namen als Text."""
+    expected = {"Dweck": 1000, "Finland": 1000, "CNBC": 1000, "Lanz": 2082, "Malaysia": 1316}
+    for path in COMMENTS_DIR.iterdir():
+        df = read_comments(path.read_bytes(), path.name)
+        key = next(k for k in expected if k in path.name)
+        assert len(df) == expected[key], (path.name, len(df))
+        texts = df["comment_text"]
+        assert not texts.str.lstrip().str.startswith("text:").any()
+        assert not texts.str.contains("\\n", regex=False).any()
+        if path.read_bytes()[:1] != b"{":   # CSV mit Kopfzeile: Text != Autor
+            header = pd.read_csv(path, dtype=str, keep_default_na=False, encoding="utf-8-sig")
+            assert not texts.isin(set(header["author"])).any()
+
+
+class RaisingModel:
+    """Modell, das fuer jeden Text scheitert (MESS1-Szenario: nichts erkannt)."""
+
+    def __call__(self, text, **kwargs):
+        raise RuntimeError("kein Ergebnis")
+
+
+@pytest.mark.parametrize("page,lang,repo_file", [(DE_PAGE, "de", "Markus Lanz"), (EN_PAGE, "en", "Malaysia")])
+def test_no_random_emotions_when_model_detects_nothing(fake_models, monkeypatch, page, lang, repo_file):
+    import models.model_loader as de
+    import models.model_loader_english as en
+    module = de if lang == "de" else en
+    monkeypatch.setattr(module, "load_emotion_model", lambda: AllScoresPipeline(RaisingModel()))
+    path = next(p for p in COMMENTS_DIR.iterdir() if repo_file in p.name)
+    at = _run_request(page, lang, path.read_bytes(), path.name)
+    assert at.session_state[f"live_{lang}_status"] == "done"
+    df = at.session_state["df"]
+    emotion_cols = [c for c in df.columns if c in ("emotions", "dominant_emotion", "anger", "joy", "fear")]
+    assert emotion_cols == [], emotion_cols      # keine (Zufalls-)Werte im Ergebnis/Export
+    notes = "\n".join(at.session_state[f"live_{lang}_notes"])
+    assert ("nicht erkannt" in notes) or ("could not be detected" in notes)
+
+
+def test_prepare_emotion_analysis_all_none_is_deterministic_and_empty():
+    from utils.emotion_analysis import prepare_emotion_analysis
+    from utils.emotion_analysis_english import prepare_emotion_analysis as prepare_en
+    for prepare in (prepare_emotion_analysis, prepare_en):
+        runs = []
+        for _ in range(2):
+            df = pd.DataFrame({"clean_text": ["erster text hier", "zweiter text hier"]})
+            out = prepare(df, AllScoresPipeline(RaisingModel()), show_config_ui=False)
+            assert out["dominant_emotion"].isna().all()
+            runs.append(out.drop(columns=["emotions"]))
+        pd.testing.assert_frame_equal(runs[0], runs[1])   # nichts Zufaelliges
+        numeric = runs[0].drop(columns=["clean_text", "dominant_emotion"]).apply(pd.to_numeric, errors="coerce")
+        assert numeric.isna().all().all()                 # leere Werte statt 0/Zufall
+
+
+def test_unrecognized_comment_gets_no_dominant_emotion():
+    from utils.emotion_analysis import dominant_emotion_or_none
+    df = pd.DataFrame({"emotions": [{"anger": 0.1, "joy": 0.9}, None]})
+    scores = pd.DataFrame({"anger": [0.1, float("nan")], "joy": [0.9, float("nan")]})
+    assert list(dominant_emotion_or_none(df, scores)) == ["joy", None]   # frueher: "anger"
+
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_file_without_text_column_fails_honestly(fake_models, page, lang):
+    at = _run_request(page, lang, b"id,author\n1,@a\n", "ohne_text.csv")
+    assert at.session_state[f"live_{lang}_status"] is None       # Meldung gezeigt, Status zurueckgesetzt
+    assert ("Textspalte" in _warnings(at)) or ("text column" in _warnings(at))
+    assert at.session_state["result_source"] == "example"
+
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_sentiment_total_failure_is_an_error(fake_models, monkeypatch, page, lang):
+    import models.model_loader as de
+    import models.model_loader_english as en
+    module = de if lang == "de" else en
+    monkeypatch.setattr(module, "load_sentiment_model", lambda: RaisingModel())
+    path = next(p for p in COMMENTS_DIR.iterdir() if ("Lanz" if lang == "de" else "Malaysia") in p.name)
+    at = _run_request(page, lang, path.read_bytes(), path.name)
+    assert at.session_state["result_source"] == "example"         # kein "100 % neutral"-Ergebnis
+    assert ("Sentiment-Modell" in _warnings(at)) or ("sentiment model" in _warnings(at))
+
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_emotion_model_load_error_is_not_cached(fake_models, monkeypatch, page, lang):
+    """Review M2: Ladefehler -> Hinweis im Lauf, aber kein gecachtes None (Loader wirft)."""
+    import models.model_loader as de
+    import models.model_loader_english as en
+    module = de if lang == "de" else en
+
+    def broken():
+        raise OSError("Download fehlgeschlagen")
+    monkeypatch.setattr(module, "load_emotion_model", broken)
+    path = next(p for p in COMMENTS_DIR.iterdir() if ("Lanz" if lang == "de" else "Malaysia") in p.name)
+    at = _run_request(page, lang, path.read_bytes(), path.name)
+    assert at.session_state[f"live_{lang}_status"] == "done"
+    assert "dominant_emotion" not in at.session_state["df"].columns
+    notes = "\n".join(at.session_state[f"live_{lang}_notes"])
+    assert ("Emotions-Modell" in notes) or ("emotion model" in notes)
+
+
+def test_loader_source_does_not_swallow_errors():
+    for name in ("models/model_loader.py", "models/model_loader_english.py"):
+        source = (ROOT / name).read_text(encoding="utf-8")
+        emotion = source.split("def load_emotion_model")[1].split("\n@st.cache_resource")[0]
+        assert "return None" not in emotion and "except" not in emotion
+        assert source.count("ttl=MODEL_TTL_SECONDS") == 3
+        assert "def clear_models" in source
+
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_second_run_waits_while_another_runs(fake_models, page, lang):
+    """Review M3: prozessweiter Lauf-Lock -> ehrliche Meldung statt Parallelbetrieb."""
+    from utils.live_comment_analysis import _run_lock
+    lock = _run_lock()
+    assert lock.acquire(blocking=False)
+    try:
+        path = next(p for p in COMMENTS_DIR.iterdir() if ("Lanz" if lang == "de" else "Malaysia") in p.name)
+        at = _run_request(page, lang, path.read_bytes(), path.name)
+        assert at.session_state["result_source"] == "example"
+        assert ("andere Analyse" in _warnings(at)) or ("Another analysis" in _warnings(at))
+    finally:
+        lock.release()
+
+
+def test_live_path_has_no_st_stop():
+    """Review M5a: Nach st.stop() gehen alle Statusaenderungen des Durchlaufs verloren
+    (Seite bliebe auf "Analyse laeuft"). Der Live-Pfad darf st.stop() nicht erreichen."""
+    import inspect
+    from utils import comment_file_reader, live_comment_analysis
+    from utils.sentiment_analysis import perform_sentiment_analysis, SentimentAnalysisConfig
+    def calls_stop(obj):
+        return any("st.stop(" in line.split("#")[0] for line in inspect.getsource(obj).splitlines())
+    for obj in (comment_file_reader, live_comment_analysis, perform_sentiment_analysis):
+        assert not calls_stop(obj), obj
+    out = perform_sentiment_analysis(pd.DataFrame({"t": [""]}), "t", FakeSentiment(["positive", "neutral", "negative"]),
+                                     SentimentAnalysisConfig(min_comment_length=5))
+    assert len(out) == 0
+
+
+def test_click_after_interruption_does_not_restart_immediately():
+    """Review N3: Klick auf das alte Startformular waehrend eines Laufs startet nicht sofort neu."""
+    at = AppTest.from_file(DE_PAGE, default_timeout=TIMEOUT)
+    at.run()
+    at.session_state["live_de_status"] = "running"          # Lauf wurde durch den Klick unterbrochen
+    at.session_state["live_de_stage"] = "Testschritt"
+    next(b for b in at.button if "▶" in str(b.label)).click()
+    at.run()
+    assert not at.exception, at.exception
+    assert "unterbrochen" in _warnings(at)
+    assert at.session_state["live_de_status"] is None        # kein neuer Lauf angefordert
+    assert "live_de_request" not in at.session_state
+
+
+def test_files_per_language_and_video_ids():
+    from utils.example_analyses import known_source_names, repo_files_for_language
+    from utils.video_info import video_id_for_display
+    de = [Path(p).name for p in repo_files_for_language("de")]
+    en = [Path(p).name for p in repo_files_for_language("en")]
+    assert len(de) == 1 and "Lanz" in de[0]
+    assert len(en) == 4 and not any("Lanz" in n for n in en)
+    known = known_source_names("de") + repo_files_for_language("de")
+    assert video_id_for_display(de[0], known) == "87TYPn6gbwA"
+    assert video_id_for_display("meine_datei_abcdefghijk.csv", known) is None   # Upload: keine Video-ID
+
+
+def test_number_format_only_touches_numbers():
+    from utils.live_comment_analysis import fmt_int, sample_note
+    assert fmt_int(2082, "de") == "2.082" and fmt_int(2082, "en") == "2,082"
+    assert sample_note("de", 2082, 300) == ("Die Datei enthält 2.082 Kommentare – analysiert wurde "
+                                            "eine feste Stichprobe von 300.")

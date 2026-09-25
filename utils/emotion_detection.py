@@ -193,8 +193,9 @@ def detect_emotions(
         # Emotions-Scores für jeden Chunk sammeln
         all_scores = _collect_chunk_scores(chunks, emotion_classifier)
         
-        # Aggregiere die Scores
-        return _aggregate_emotion_scores(all_scores)
+        # Aggregiere die Scores. Kein Chunk bewertet -> None (K1, 25.09.2026: frueher leeres
+        # dict = "erkannt" ohne Modellwerte -> dominante Emotion wurde zu "anger")
+        return _aggregate_emotion_scores(all_scores) or None
         
     except Exception as e:
         # Logging könnte hier hinzugefügt werden
@@ -447,7 +448,7 @@ def contextual_emotion_detection(text: str, emotion_classifier: Any) -> Optional
     # Grundlegende Emotionserkennung über das Modell
     model_emotions = detect_emotions(text, emotion_classifier)
     
-    if model_emotions is None:
+    if not model_emotions:  # None oder {} -> nicht erkannt (K1)
         return None
     
     # Erweiterte linguistische Analyse

@@ -19,9 +19,10 @@ Einstellungen (Umgebungsvariable oder st.secrets):
   HEREDUCATION_LIVE_MAX_COMMENTS / live_max_comments -> Obergrenze Kommentare je Lauf
       (Standard: Cloud 300 laut MESS1-Empfehlung 300–500, lokal ohne Grenze; 0 = ohne Grenze)
 """
+import gc
 import os
+import threading
 import time
-import traceback
 from io import BytesIO
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -29,8 +30,16 @@ from typing import Callable, Dict, List, Optional, Tuple
 import pandas as pd
 import streamlit as st
 
+from utils.safe_log import log_exception
+
+try:  # Streamlit 1.45: st.stop() wirft StopException (BaseException, nicht Exception)
+    from streamlit.runtime.scriptrunner_utils.exceptions import StopException
+except ImportError:  # pragma: no cover – andere Streamlit-Version
+    StopException = None
+
 CLOUD_DEFAULT_MAX_COMMENTS = 300   # vorsichtiger Startwert (MESS1: 300–500), nach Cloud-Test anpassen
 SAMPLE_SEED = 42                   # feste Stichprobe -> gleiche Datei = gleiche Auswahl
+SENTIMENT_FAIL_LIMIT = 0.5         # mehr als die Haelfte ohne Modell-Ergebnis -> Lauf gilt als gescheitert (M6)
 MAX_UPLOAD_MB = 10                 # passt zu server.maxUploadSize in .streamlit/config.toml
 
 
@@ -108,15 +117,22 @@ TEXTS = {
         "running_title": "⏳ Analyse läuft",
         "running_info": "Bitte die Seite während der Analyse nicht bedienen oder neu laden – sonst wird der Lauf abgebrochen.",
         "step": "**Schritt {i}/{n}:** {label}",
-        "sample_note": "Die Datei enthält {total:,} Kommentare – analysiert wurde eine feste Stichprobe von {n:,}.",
+        "sample_note": "Die Datei enthält {total} Kommentare – analysiert wurde eine feste Stichprobe von {n}.",
         "duration": "Dauer der Analyse: {sec} s",
-        "done": "✅ Eigene Analyse fertig: {name} · {n:,} Kommentare",
+        "done": "✅ Eigene Analyse fertig: {name} · {n} Kommentare",
         "interrupted": ("⚠️ Die Analyse wurde unterbrochen (Seite bedient, neu geladen oder Verbindung getrennt) – "
                         "zuletzt bei: {stage}. Bitte unten erneut starten."),
         "failed": "⚠️ Die Analyse konnte nicht abgeschlossen werden: {msg}",
         "unexpected": "Unerwarteter Fehler ({err}). Bitte mit einer kleineren Datei erneut versuchen.",
         "download": "⬇️ Ergebnis als CSV herunterladen",
         "stage_unknown": "unbekannter Schritt",
+        "busy": ("⏳ Gerade läuft eine andere Analyse auf diesem Server. "
+                 "Bitte in 1–2 Minuten erneut starten."),
+        "stopped": "Die Analyse wurde vorzeitig beendet.",
+        "no_comments": "Nach dem Filtern sind keine Kommentare übrig.",
+        "sentiment_failed": "Das Sentiment-Modell hat für die meisten Kommentare kein Ergebnis geliefert.",
+        "sentiment_partial": ("Für {k} von {n} Kommentaren lieferte das Sentiment-Modell kein Ergebnis "
+                              "(als „neutral“ mit Konfidenz 0 gezählt)."),
     },
     "en": {
         "section_title": "🔬 Run your own analysis",
@@ -135,26 +151,77 @@ TEXTS = {
         "running_title": "⏳ Analysis running",
         "running_info": "Please do not interact with or reload the page during the analysis – that would cancel the run.",
         "step": "**Step {i}/{n}:** {label}",
-        "sample_note": "The file contains {total:,} comments – a fixed sample of {n:,} was analysed.",
+        "sample_note": "The file contains {total} comments – a fixed sample of {n} was analysed.",
         "duration": "Analysis time: {sec} s",
-        "done": "✅ Your analysis is ready: {name} · {n:,} comments",
+        "done": "✅ Your analysis is ready: {name} · {n} comments",
         "interrupted": ("⚠️ The analysis was interrupted (page used, reloaded or connection lost) – "
                         "last step: {stage}. Please start it again below."),
         "failed": "⚠️ The analysis could not be completed: {msg}",
         "unexpected": "Unexpected error ({err}). Please try again with a smaller file.",
         "download": "⬇️ Download result as CSV",
         "stage_unknown": "unknown step",
+        "busy": ("⏳ Another analysis is currently running on this server. "
+                 "Please start again in 1–2 minutes."),
+        "stopped": "The analysis was stopped early.",
+        "no_comments": "No comments remain after filtering.",
+        "sentiment_failed": "The sentiment model returned no result for most comments.",
+        "sentiment_partial": ("The sentiment model returned no result for {k} of {n} comments "
+                              "(counted as “neutral” with confidence 0)."),
     },
 }
 
 
-def _fmt(lang: str, text: str) -> str:
-    """Tausendertrennzeichen: DE Punkt, EN Komma."""
+def fmt_int(n: int, lang: str) -> str:
+    """Nur die Zahl formatieren (Review N8): DE 1.234, EN 1,234."""
+    text = f"{int(n):,}"
     return text.replace(",", ".") if lang == "de" else text
 
 
 def _keys(lang: str) -> Dict[str, str]:
-    return {name: f"live_{lang}_{name}" for name in ("status", "request", "error", "notes", "stage")}
+    return {name: f"live_{lang}_{name}"
+            for name in ("status", "request", "error", "notes", "stage", "ignore_submit")}
+
+
+def sample_note(lang: str, total: int, n: int) -> str:
+    return TEXTS[lang]["sample_note"].format(total=fmt_int(total, lang), n=fmt_int(n, lang))
+
+
+# ---------------------------------------------------------------------------
+# Speicher und Parallelbetrieb (Review M3/N3)
+# ---------------------------------------------------------------------------
+
+@st.cache_resource(show_spinner=False)
+def _run_lock() -> threading.Lock:
+    """Ein Lock fuer den ganzen App-Prozess: hoechstens eine Live-Analyse gleichzeitig."""
+    return threading.Lock()
+
+
+def free_other_language_models(lang: str) -> None:
+    """Vor dem Laden der Modelle einer Sprache die der anderen Sprache freigeben."""
+    try:
+        if lang == "de":
+            from models import model_loader_english as other
+        else:
+            from models import model_loader as other
+        other.clear_models()
+    except Exception as error:  # noqa: BLE001
+        log_exception(f"live-analysis {lang}", error, "free_other_language_models")
+    gc.collect()
+
+
+def check_sentiment_result(df: pd.DataFrame, lang: str, notes: List[str]) -> None:
+    """Sentiment-Totalausfall erkennen (Review M6): Die Analyzer machen aus jeder Modell-Ausnahme
+    still "neutral" mit Konfidenz 0.0 – das darf nicht als fertiges Ergebnis durchgehen."""
+    t = TEXTS[lang]
+    if len(df) == 0:
+        raise LiveAnalysisError(t["no_comments"])
+    if "confidence" not in df.columns:
+        raise LiveAnalysisError(t["sentiment_failed"])
+    failed = int((pd.to_numeric(df["confidence"], errors="coerce").fillna(0) <= 0).sum())
+    if failed > len(df) * SENTIMENT_FAIL_LIMIT:
+        raise LiveAnalysisError(t["sentiment_failed"])
+    if failed:
+        notes.append(t["sentiment_partial"].format(k=fmt_int(failed, lang), n=fmt_int(len(df), lang)))
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +271,12 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         st.session_state[k["status"]] = None
         return
 
+    lock = _run_lock()
+    if not lock.acquire(blocking=False):
+        # Eine andere Sitzung rechnet gerade – nicht parallel starten (RAM/CPU der Cloud)
+        st.session_state[k["status"]] = "busy"
+        return
+
     st.session_state[k["status"]] = "running"
     st.session_state[k["stage"]] = None
     finished = False
@@ -214,7 +287,15 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         file_obj = BytesIO(request["data"])
         file_obj.name = request["name"]
         progress = Progress(lang, steps)
-        result = runner(file_obj, request, progress)
+        try:
+            result = runner(file_obj, request, progress)
+        except BaseException as error:
+            # Schutz fuer st.stop() aus Alt-Funktionen (Review M5a). Achtung: Nach st.stop()
+            # verwirft Streamlit weitere Aenderungen dieses Durchlaufs (in AppTest belegt) –
+            # darum ist st.stop() im Live-Pfad entfernt; dies ist nur die letzte Absicherung.
+            if StopException is not None and isinstance(error, StopException):
+                raise LiveAnalysisError(t["stopped"]) from None
+            raise
 
         df = result["df"]
         # Erst jetzt, nach dem vollstaendigen Lauf, in die Sitzung schreiben
@@ -234,13 +315,16 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         st.session_state[k["error"]] = str(error)
         finished = True
     except Exception as error:  # noqa: BLE001 – Besucher:innen bekommen eine verstaendliche Meldung
-        print(f"[live-analysis {lang}] {traceback.format_exc()}", flush=True)  # landet im Server-Log
+        # nur Fehlertyp + Schritt + Code-Stellen ins Server-Log, keine Kommentartexte (Review N7)
+        log_exception(f"live-analysis {lang}", error, st.session_state.get(k["stage"]))
         st.session_state[k["status"]] = "failed"
         st.session_state[k["error"]] = t["unexpected"].format(err=type(error).__name__)
         finished = True
     finally:
         if not finished and st.session_state.get(k["status"]) == "running":
             st.session_state[k["status"]] = "interrupted"
+        lock.release()
+        gc.collect()
     st.rerun()
 
 
@@ -252,6 +336,12 @@ def render_status(lang: str) -> None:
     if status == "interrupted":
         stage = st.session_state.get(k["stage"]) or t["stage_unknown"]
         st.warning(t["interrupted"].format(stage=stage))
+        st.session_state[k["status"]] = None
+        # Review N3: Wurde der Lauf durch einen Klick auf das (noch sichtbare) Startformular
+        # unterbrochen, startet dieser Klick NICHT sofort einen neuen Lauf.
+        st.session_state[k["ignore_submit"]] = True
+    elif status == "busy":
+        st.warning(t["busy"])
         st.session_state[k["status"]] = None
     elif status == "failed":
         st.warning(t["failed"].format(msg=st.session_state.get(k["error"], "")))
@@ -269,7 +359,7 @@ def render_live_result_info(lang: str) -> None:
     t = TEXTS[lang]
     df = st.session_state.get("df")
     n = len(df) if df is not None else 0
-    st.success(_fmt(lang, t["done"].format(name=st.session_state.get("current_file"), n=n)))
+    st.success(t["done"].format(name=st.session_state.get("current_file"), n=fmt_int(n, lang)))
     for note in st.session_state.get(_keys(lang)["notes"]) or []:
         st.caption(note)
 
@@ -291,9 +381,10 @@ def render_result_download(lang: str) -> None:
 
 def render_live_section(lang: str, repo_files: List) -> None:
     """Formular 'Eigene Analyse starten' (unter den Beispielen)."""
+    k = _keys(lang)
+    ignore_submit = st.session_state.pop(k["ignore_submit"], False)
     if not live_analysis_enabled():
         return
-    k = _keys(lang)
     t = TEXTS[lang]
     st.divider()
     st.subheader(t["section_title"])
@@ -314,7 +405,7 @@ def render_live_section(lang: str, repo_files: List) -> None:
         upload = st.file_uploader(t["upload_label"], type=["csv", "json", "jsonl"], key=f"live_upload_{lang}")
         submitted = st.form_submit_button(t["start"], type="primary")
 
-    if not submitted:
+    if not submitted or ignore_submit:
         return
     if source == t["source_upload"]:
         if upload is None:

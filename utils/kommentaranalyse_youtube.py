@@ -40,40 +40,32 @@ class KommentaranalyseYouTube:
             return None
             
         try:
-            url = f"https://www.youtube.com/watch?v={video_id}"
+            # gecacht (hoechstens 1x pro Tag und Video), Review M4
+            from utils.video_info import extract_info_cached
+            info = extract_info_cached(video_id)
+            if info is None:
+                return None
             
-            # yt-dlp configuration
-            ydl_opts = {
-                'quiet': True,
-                'no_warnings': True,
-                'extract_flat': False,
+            # Convert information to usable dictionary
+            video_info = {
+                "title": info.get('title', 'Title not available'),
+                "views": info.get('view_count', 'Views not available'),
+                "publish_date": info.get('upload_date', 'Date not available'),
+                "length": info.get('duration', 'Length not available'),
+                "author": info.get('uploader', 'Author not available'),
+                "description": info.get('description', 'Description not available')
             }
             
-            with self.YoutubeDL(ydl_opts) as ydl:
-                # Get video information without download
-                info = ydl.extract_info(url, download=False)
-                
-                # Convert information to usable dictionary
-                video_info = {
-                    "title": info.get('title', 'Title not available'),
-                    "views": info.get('view_count', 'Views not available'),
-                    "publish_date": info.get('upload_date', 'Date not available'),
-                    "length": info.get('duration', 'Length not available'),
-                    "author": info.get('uploader', 'Author not available'),
-                    "description": info.get('description', 'Description not available')
-                }
-                
-                # Format upload date
-                if isinstance(video_info['publish_date'], str) and len(video_info['publish_date']) == 8:
-                    date_str = video_info['publish_date']
-                    try:
-                        video_info['publish_date'] = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-                    except:
-                        pass
-                
-                return video_info
-        except Exception as e:
-            st.warning(f"Konnte YouTube-Daten nicht abrufen: {e}")
+            # Format upload date
+            if isinstance(video_info['publish_date'], str) and len(video_info['publish_date']) == 8:
+                date_str = video_info['publish_date']
+                try:
+                    video_info['publish_date'] = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                except:
+                    pass
+            
+            return video_info
+        except Exception:
             return None
     
     def format_duration(self, seconds):

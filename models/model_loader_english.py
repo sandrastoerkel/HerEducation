@@ -10,12 +10,16 @@ warnings.filterwarnings("ignore", message=".*Tried to instantiate class '__path_
 # Reduce log level for transformers library
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
+# Gecachte Modelle verfallen 30 Min. nach dem Laden (Review M3; Streamlit-ttl zaehlt ab dem Laden);
+# Neuladen kostet ca. 14 s (MESS1). Die kostenlose Streamlit-Cloud hat wenig RAM.
+MODEL_TTL_SECONDS = 1800
+
 # transformers/torch werden erst beim ersten Laden eines Modells importiert
 # (nicht schon beim Seitenaufruf) – spart Zeit und Arbeitsspeicher, solange
 # niemand eine Live-Analyse startet.
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, ttl=MODEL_TTL_SECONDS)
 def load_sentiment_model():
     """
     Loads the English sentiment analysis model
@@ -27,24 +31,22 @@ def load_sentiment_model():
     return pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, ttl=MODEL_TTL_SECONDS)
 def load_emotion_model():
     """
     Loads the English emotion analysis model.
     Rueckgabe: AllScoresPipeline – liefert immer alle Emotions-Scores
     (return_all_scores wirkt in transformers 5.x nicht mehr, siehe pipeline_adapters.py).
     """
-    try:
-        from transformers import pipeline
-        emotion_classifier = pipeline("text-classification",
-                                      model="j-hartmann/emotion-english-distilroberta-base")
-        return AllScoresPipeline(emotion_classifier)
-    except Exception as e:
-        st.error(f"Error loading emotion recognition model: {str(e)}")
-        return None
+    # Fehler werden NICHT abgefangen (Review M2): unter cache_resource wuerde sonst None
+    # gecacht und das Modell bis zum Neustart der App nie wieder geladen.
+    from transformers import pipeline
+    emotion_classifier = pipeline("text-classification",
+                                  model="j-hartmann/emotion-english-distilroberta-base")
+    return AllScoresPipeline(emotion_classifier)
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, ttl=MODEL_TTL_SECONDS)
 def load_embedding_model():
     """Satz-Embedding-Modell fuer BERTopic (einmal laden, von allen Laeufen geteilt)."""
     from sentence_transformers import SentenceTransformer
@@ -93,3 +95,12 @@ def load_bertopic_model():
     except Exception as e:
         st.error(f"Error loading BERTopic model: {str(e)}")
         return None
+
+
+def clear_models() -> None:
+    """Gibt alle gecachten Modelle dieser Sprache frei (vor dem Laden der anderen Sprache, Review M3)."""
+    for loader in (load_sentiment_model, load_emotion_model, load_embedding_model):
+        try:
+            loader.clear()
+        except Exception:  # noqa: BLE001
+            pass

@@ -15,3 +15,6 @@ cookies.txt
 
 # Test-Cache
 .pytest_cache/
+
+# Lokale Streamlit-Secrets (z. B. debug = true) nie einchecken (Review N1)
+.streamlit/secrets.toml

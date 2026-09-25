@@ -35,10 +35,15 @@ from utils.kommentaranalyse_persistence import KommentaranalysePersistence
 from utils.kommentaranalyse_file_handler import KommentaranalyseFileHandler
 from utils.kommentaranalyse_youtube import KommentaranalyseYouTube
 from utils.kommentaranalyse_ui import KommentaranalyseUI
-from utils.example_analyses import render_example_picker
+from utils.example_analyses import render_example_picker, known_source_names, repo_files_for_language
+from utils.comment_file_reader import CommentFileError, error_message, read_comments
 from utils.live_comment_analysis import (
-    LiveAnalysisError, is_cloud, is_live_result, limit_comments, live_max_comments,
-    render_live_section, render_result_download, render_status, run_pending_analysis)
+    LiveAnalysisError, check_sentiment_result, free_other_language_models, is_cloud, is_live_result,
+    limit_comments, live_max_comments, render_live_section, render_result_download, render_status,
+    run_pending_analysis, sample_note)
+from utils.safe_log import log_exception
+from utils.live_comment_analysis import fmt_int
+from utils.video_info import render_video, video_id_for_display
 from models.pipeline_adapters import CachedPipeline
 
 # ===== STORAGE-SYSTEM INTEGRATION =====
@@ -290,32 +295,51 @@ LIVE_STEPS_DE = [
 ]
 
 
+EMOTION_RESULT_COLUMNS = ['emotions', 'dominant_emotion']
+
+
+def _drop_emotion_columns(df):
+    """Alle Emotions-Spalten entfernen (nichts erkannt -> keine Werte im Export, Review H1)."""
+    from utils.emotion_analysis import EMOTION_LABEL_MAP
+    names = list(EMOTION_LABEL_MAP.values())
+    cols = [c for c in df.columns
+            if c in EMOTION_RESULT_COLUMNS or c in names
+            or any(c == f"{n}_linguistic" or c == f"{n}_sentence_count" for n in names)]
+    return df.drop(columns=cols, errors='ignore')
+
+
 def run_live_analysis_de(file_obj, request, progress):
     """Komplette Analyse in der bisherigen Reihenfolge (Sentiment → Themen → Emotionen), ohne Regler.
 
     Es gelten die Standardwerte der Oberfläche. Das Ergebnis wird erst nach dem vollständigen
-    Lauf von run_pending_analysis() in die Sitzung geschrieben.
+    Lauf von run_pending_analysis() in die Sitzung geschrieben. Keine st.stop()/Bedienelemente.
     """
     notes = []
 
     progress.step(0)
-    df, text_column = load_and_clean_data(file_obj)
-    if df is None or text_column is None or len(df) == 0:
-        raise LiveAnalysisError("In der Datei wurden keine Kommentare gefunden.")
-    df[text_column] = df[text_column].fillna("").astype(str)
-    df = df[df[text_column].str.len() > 0].reset_index(drop=True)
-    if len(df) == 0:
-        raise LiveAnalysisError("In der Datei wurden keine Kommentare gefunden.")
+    # Gemeinsamer Leser (Review H2): Format am Inhalt erkennen, Textspalte am Namen, kein Präfix
+    try:
+        df = read_comments(request["data"], request.get("name", ""))
+    except CommentFileError as error:
+        raise LiveAnalysisError(error_message(error, "de"))
+    text_column = 'comment_text'
     df, total = limit_comments(df, live_max_comments())
     if len(df) < total:
-        notes.append(f"Die Datei enthält {total:,} Kommentare – analysiert wurde eine feste Stichprobe von {len(df):,}.".replace(",", "."))
+        notes.append(sample_note('de', total, len(df)))
     df['clean_text'] = df[text_column].apply(clean_text)
 
     progress.step(1)
     if not (MODELS_AVAILABLE and SENTIMENT_ANALYSIS_AVAILABLE):
         raise LiveAnalysisError("Das Sentiment-Modell ist auf diesem Server nicht installiert.")
-    sentiment_pipeline = CachedPipeline(load_sentiment_model())
+    free_other_language_models('de')   # Review M3: englische Modelle vorher freigeben
+    try:
+        sentiment_model = load_sentiment_model()
+    except Exception as error:  # noqa: BLE001
+        log_exception("live-analysis de", error, "Sentiment-Modell laden")
+        raise LiveAnalysisError("Das Sentiment-Modell konnte nicht geladen werden. Bitte später erneut versuchen.")
+    sentiment_pipeline = CachedPipeline(sentiment_model)
     df = perform_sentiment_analysis(df, text_column, sentiment_pipeline, SentimentAnalysisConfig())
+    check_sentiment_result(df, 'de', notes)   # Review M6
 
     additional_data = {}
     progress.step(2)
@@ -331,19 +355,23 @@ def run_live_analysis_de(file_obj, request, progress):
 
     progress.step(3)
     if EMOTION_ANALYSIS_AVAILABLE and MODELS_AVAILABLE:
-        emotion_classifier = load_emotion_model()
+        try:
+            emotion_classifier = load_emotion_model()
+        except Exception as error:  # noqa: BLE001 – Review M2: Fehler wird nicht mehr gecacht
+            log_exception("live-analysis de", error, "Emotions-Modell laden")
+            emotion_classifier = None
         if emotion_classifier is not None:
             df = prepare_emotion_analysis(df, emotion_classifier, show_config_ui=False)
             recognized = int(df['emotions'].notna().sum()) if 'emotions' in df.columns else 0
             if recognized == 0:
-                # keine erfundenen Ersatzwerte anzeigen
-                df = df.drop(columns=['dominant_emotion'], errors='ignore')
+                # keine erfundenen Ersatzwerte anzeigen oder exportieren
+                df = _drop_emotion_columns(df)
                 notes.append("Emotionen konnten nicht erkannt werden – der Emotions-Tab wird ausgeblendet.")
             elif recognized < len(df):
-                notes.append(f"Emotionen erkannt für {recognized:,} von {len(df):,} Kommentaren "
-                             f"(sehr kurze Kommentare werden nicht bewertet).".replace(",", "."))
+                notes.append(f"Emotionen erkannt für {fmt_int(recognized, 'de')} von {fmt_int(len(df), 'de')} "
+                             f"Kommentaren (sehr kurze Kommentare werden nicht bewertet).")
         else:
-            notes.append("Emotions-Modell konnte nicht geladen werden.")
+            notes.append("Emotions-Modell konnte nicht geladen werden – der Emotions-Tab wird ausgeblendet.")
 
     return {"df": df, "text_column": text_column, "additional_data": additional_data, "notes": notes}
 
@@ -461,13 +489,11 @@ def main():
         df = st.session_state.df
         text_column = st.session_state.text_column
         
-        # Extract YouTube ID from filename
+        # YouTube-Video nur für mitgelieferte Dateien/Beispiele (Review N6); Infos gecacht,
+        # in der Cloud nur eingebettetes Video (Review M4)
         filename = st.session_state.current_file
-        video_id = file_handler.extract_video_id(filename)
-        
-        # Show YouTube information
-        if video_id:
-            display_youtube_info(video_id)
+        video_id = video_id_for_display(filename, known_source_names('de') + repo_files_for_language('de'))
+        render_video(video_id, 'de', youtube_manager)
         
         # Create app tabs based on available data in df
         tabs_to_create = ["📊 Sentiment-Analyse"]
@@ -585,7 +611,7 @@ def main():
         )
     
     # Eigene Analyse starten (unter den Beispielen) – ersetzt den früheren CASE 2
-    render_live_section('de', get_files_from_data_folder())
+    render_live_section('de', repo_files_for_language('de'))   # Review N5: nur deutsche Dateien
     
     # Debug section (nur mit HEREDUCATION_DEBUG=1 oder secrets debug=true)
     if is_debug():

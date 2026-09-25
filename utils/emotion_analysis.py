@@ -15,6 +15,7 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 from dataclasses import dataclass, field
 from enum import Enum
 import traceback
+from utils.safe_log import log_exception
 import logging
 
 # Import from German emotion detection module
@@ -29,6 +30,24 @@ from .emotion_detection import (
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
+
+
+def dominant_emotion_or_none(df: pd.DataFrame, scores: pd.DataFrame) -> pd.Series:
+    """Dominante Emotion je Kommentar; None, wenn fuer den Kommentar keine Emotion erkannt wurde.
+
+    Frueher ergab idxmax fuer nicht erkannte Kommentare (alle Werte 0) immer die erste
+    Emotion ("anger") – ein erfundener Wert (Review H1, 25.09.2026).
+    """
+    if 'emotions' in df.columns:
+        recognized = df['emotions'].notna()
+    else:
+        recognized = scores.notna().any(axis=1)
+    recognized &= scores.notna().any(axis=1)
+    result = pd.Series([None] * len(df), index=df.index, dtype=object)
+    if recognized.any():
+        result[recognized] = scores[recognized].fillna(0).idxmax(axis=1)
+    return result
+
 
 class GermanEmotionAnalysisConstants:
     """Central constants for German emotion analysis"""
@@ -387,26 +406,27 @@ class GermanEmotionDetector:
             emotion_columns = list(EMOTION_LABEL_MAP.values())
             
             # Handle case where no emotions detected
+            # Keine erfundenen Ersatzwerte (Review H1, 25.09.2026): Kommentare ohne erkannte
+            # Emotion bekommen leere Werte (NaN), nicht 0 und nicht Zufallswerte.
             if all(x is None for x in df['emotions']):
-                st.error("Keine Emotionen konnten erkannt werden! Fallback zu statistischer Verteilung.")
-                df = self._apply_fallback_emotions(df, emotion_columns)
+                self.logger.warning("Keine Emotionen erkannt – Emotionsspalten bleiben leer.")
             
             # Extract emotions into separate columns
             for emotion in emotion_columns:
                 df[emotion] = df['emotions'].apply(
-                    lambda x: x.get(emotion, 0) if x is not None else 0
+                    lambda x: x.get(emotion, 0) if x is not None else np.nan
                 )
                 
                 # Linguistic columns
                 ling_col = f"{emotion}_linguistic"
                 df[ling_col] = df['emotions'].apply(
-                    lambda x: x.get(ling_col, 0) if x is not None and ling_col in x else 0
+                    lambda x: x.get(ling_col, 0) if x is not None else np.nan
                 )
                 
                 # Sentence count columns
                 count_col = f"{emotion}_sentence_count"
                 df[count_col] = df['emotions'].apply(
-                    lambda x: x.get(count_col, 0) if x is not None and count_col in x else 0
+                    lambda x: x.get(count_col, 0) if x is not None else np.nan
                 )
             
             return df
@@ -415,19 +435,6 @@ class GermanEmotionDetector:
             self.logger.error(f"Error extracting emotion columns: {e}")
             return df
     
-    def _apply_fallback_emotions(self, df: pd.DataFrame, emotion_columns: List[str]) -> pd.DataFrame:
-        """Apply fallback emotions when none are detected"""
-        for i in range(len(df)):
-            fallback_dict = {}
-            for emotion in emotion_columns:
-                weight = self.fallbacks.GERMAN_FALLBACK_DISTRIBUTION.get(
-                    GermanEmotionType(emotion), 0.1
-                )
-                fallback_dict[emotion] = np.random.beta(2, 5) * weight
-            df['emotions'].iloc[i] = fallback_dict
-        
-        return df
-
 
 class GermanEmotionValidator:
     """Validates and fixes German emotion data"""
@@ -449,14 +456,8 @@ class GermanEmotionValidator:
             )
             
             if all_identical:
-                st.error("Alle Emotionswerte sind identisch! Fallback zu statistischer Verteilung.")
-                
-                for i in range(len(df)):
-                    for emotion in emotion_columns:
-                        if emotion == "anger":
-                            df[emotion].iloc[i] = np.random.beta(5, 2) * 0.6
-                        else:
-                            df[emotion].iloc[i] = np.random.beta(2, 5) * 0.4 / (len(emotion_columns) - 1)
+                # frueher: Zufallswerte als "statistische Verteilung" (Review H1) – jetzt nur Hinweis im Log
+                self.logger.warning("Alle Emotionswerte sind identisch – keine Ersatzwerte.")
             
             return df
             
@@ -527,7 +528,7 @@ class GermanEmotionCalculator:
             
             # Determine dominant emotion
             weighted_df = pd.DataFrame(weighted_scores)
-            df['dominant_emotion'] = weighted_df.idxmax(axis=1)
+            df['dominant_emotion'] = dominant_emotion_or_none(df, weighted_df)
             
             st.write("Verteilung der dominanten Emotionen:", df['dominant_emotion'].value_counts())
             
@@ -542,17 +543,10 @@ class GermanEmotionCalculator:
         df: pd.DataFrame, 
         emotion_columns: List[str]
     ) -> pd.DataFrame:
-        """Apply fallback for dominant emotion"""
+        """Dominante Emotion aus den vorhandenen Spalten – ohne Zufallswerte (Review H1)."""
         available_emotions = [col for col in emotion_columns if col in df.columns]
-        
         if available_emotions:
-            df['dominant_emotion'] = df[available_emotions].idxmax(axis=1)
-        else:
-            # Fallback based on typical distribution
-            fallback_dist = GermanEmotionFallbacks.GERMAN_FALLBACK_DISTRIBUTION
-            weights = [fallback_dist.get(GermanEmotionType(emotion), 0.1) for emotion in emotion_columns]
-            df['dominant_emotion'] = np.random.choice(emotion_columns, size=len(df), p=weights)
-        
+            df['dominant_emotion'] = dominant_emotion_or_none(df, df[available_emotions])
         return df
 
 
@@ -1082,7 +1076,7 @@ def render_german_emotions_by_topic_chart(df: pd.DataFrame, topic_labels: Dict[i
         
     except Exception as e:
         st.error(f"Fehler bei der Emotion-pro-Thema-Analyse: {str(e)}")
-        st.write("Error details:", traceback.format_exc())
+        log_exception("emotion-analysis de", e)  # Details nur ins Server-Log (Review N7)
 
 
 def render_german_emotional_categories_by_topic(emotion_counts: pd.DataFrame) -> None:
@@ -1439,6 +1433,11 @@ def validate_emotion_parameters(df: pd.DataFrame, text_column: str) -> None:
         df: DataFrame with emotion data
         text_column: Name of text column
     """
+    # K1 (25.09.2026): Das "Parameter-Experiment" rechnet mit einer simulierten Qualitaetskurve
+    # plus Zufallsrauschen – keine Messung. Fuer Besucher:innen ausgeblendet, nur im Debug-Modus.
+    from utils.debug_flag import is_debug
+    if not is_debug():
+        return
     render_german_parameter_validation_ui(df, text_column)
 
 

@@ -6,13 +6,14 @@ analyzed_data/results/. Darunter steht die Live-Analyse ("Eigene Analyse starten
 utils/live_comment_analysis.py).
 """
 import ast
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
 from utils.live_comment_analysis import (  # noqa: F401 – live_analysis_enabled: Rueckwaertskompatibilitaet
-    is_live_result, live_analysis_enabled, render_live_result_info)
+    fmt_int, is_live_result, live_analysis_enabled, render_live_result_info)
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = APP_ROOT / "analyzed_data" / "results"
@@ -44,6 +45,34 @@ EXAMPLES = [
         "source_name": "In Finland classes in recogni.csv",
     },
 ]
+
+DATA_DIR = APP_ROOT / "data" / "comments"
+
+# Sprache der mitgelieferten Kommentardateien (Review N5): Die DE-Seite bietet nur deutsche,
+# die EN-Seite nur englische Dateien an. Neue Dateien hier eintragen; nicht eingetragene
+# Dateien erscheinen auf beiden Seiten.
+DATA_FILE_LANG = {
+    "2024-06-18_87TYPn6gbwA_Wie Künstliche Intelligenz die Bildung verändert _ Markus Lanz.csv": "de",
+    "2024-11-23_KdIw52uLW8g_Why Malaysia Education System Is A Failure_.csv": "en",
+    "2022-08-21_XlnspY2wOVw_Why The Education System Is Failing America _ CNBC Marathon.csv": "en",
+    "2016-08-15_UfmFIEh2QjU_5 Reasons Why Finland Is A Global Education Leader.csv": "en",
+    "2014-12-17__X0mgOOSpLU_The power of believing that you can improve _ Carol Dweck _ TED.csv": "en",
+}
+
+
+def repo_files_for_language(lang: str):
+    """Mitgelieferte Dateien fuer eine Sprache (Pfade als Strings, sortiert)."""
+    if not DATA_DIR.exists():
+        return []
+    files = sorted(p for p in DATA_DIR.iterdir() if p.is_file() and p.suffix.lower() in (".csv", ".json", ".jsonl"))
+    langs = {unicodedata.normalize("NFC", k): v for k, v in DATA_FILE_LANG.items()}
+    return [str(p) for p in files if langs.get(unicodedata.normalize("NFC", p.name), lang) == lang]
+
+
+def known_source_names(lang: str):
+    """Dateinamen der Beispiele (fuer die Video-ID, Review N6)."""
+    return [e["source_name"] for e in EXAMPLES if e["lang"] == lang]
+
 
 TEXTS = {
     "de": {
@@ -158,4 +187,4 @@ def render_example_picker(lang: str) -> None:
         st.rerun()
     df = st.session_state.get("df")
     if df is not None:
-        st.info(f"{t['current']}: {st.session_state.get('example_label')} · {len(df):,} {t['comments']}".replace(",", "." if lang == "de" else ","))
+        st.info(f"{t['current']}: {st.session_state.get('example_label')} · {fmt_int(len(df), lang)} {t['comments']}")

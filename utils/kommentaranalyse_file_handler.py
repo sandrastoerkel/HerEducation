@@ -46,40 +46,13 @@ class KommentaranalyseFileHandler:
         Returns:
             DataFrame mit bereinigten Kommentaren
         """
+        # Review H2 (25.09.2026): frueher immer die ZWEITE Spalte (bei YouTube-Exporten mit
+        # Kopfzeile = Autor-Name; bei JSON Lines mit Endung .csv Praefix " text: ").
+        # Jetzt gemeinsamer Leser fuer DE + EN: utils/comment_file_reader.py
+        from utils.comment_file_reader import CommentFileError, read_comments
         try:
-            # Split file into lines
-            lines = file_content.strip().split('\n')
-            cleaned_data = []
-            
-            for line_index, line in enumerate(lines):
-                # Extract comment manually - robust approach
-                in_quotes = False
-                fields = []
-                current_field = ""
-                
-                for char in line:
-                    if char == '"':
-                        in_quotes = not in_quotes
-                    elif char == ',' and not in_quotes:
-                        fields.append(current_field)
-                        current_field = ""
-                    else:
-                        current_field += char
-                
-                # Add last field
-                fields.append(current_field)
-                
-                # Extract comment column (second column, if available)
-                comment = ""
-                if len(fields) > 1:
-                    comment = fields[1]
-                
-                cleaned_data.append({'comment_text': comment, 'original_line': line_index + 1})
-            
-            return pd.DataFrame(cleaned_data)
-        
-        except Exception as e:
-            st.error(f"Fehler bei der Bereinigung der CSV-Datei: {e}")
+            return read_comments(file_content.encode("utf-8"))
+        except CommentFileError:
             return pd.DataFrame(columns=['comment_text', 'original_line'])
     
     def clean_text(self, text):
@@ -131,44 +104,16 @@ class KommentaranalyseFileHandler:
         Returns:
             Tuple: (df, text_column)
         """
-        # Determine file type
-        file_type = uploaded_file.name.split('.')[-1].lower()
-        
-        if file_type == 'csv':
-            # Read and clean CSV file
-            file_content = uploaded_file.getvalue().decode('utf-8')
-            
-            # Show file information
-            st.info("CSV-Datei wird bereinigt und Kommentare werden extrahiert...")
-            
-            # Clean CSV and extract comments
-            df = self.clean_csv_data(file_content)
-            
-            if df.empty:
-                st.error("Keine gültigen Kommentare in der Datei gefunden.")
-                st.stop()
-            else:
-                st.success(f"{len(df)} Kommentare erfolgreich extrahiert.")
-                text_column = 'comment_text'
-        
-        elif file_type in ['json', 'jsonl']:
-            # Read JSON file
-            df = pd.read_json(uploaded_file, lines=True)
-            
-            # Check if required columns are present
-            text_column = None
-            possible_columns = ['text', 'comment', 'kommentar', 'content', 'Text', 'Comment', 'Kommentar', 'Content']
-            
-            for col in possible_columns:
-                if col in df.columns:
-                    text_column = col
-                    break
-            
-            if text_column is None:
-                st.error("Keine erkannte Textspalte in der JSON-Datei gefunden.")
-                st.stop()
-        
-        return df, text_column
+        # Gemeinsamer Leser (Review H2): Format am Inhalt erkennen, Textspalte am Namen.
+        # Kein st.stop() mehr (Review M5) – bei Fehler (leeres df, None).
+        from utils.comment_file_reader import CommentFileError, error_message, read_comments
+        try:
+            df = read_comments(uploaded_file.getvalue(), getattr(uploaded_file, "name", ""))
+        except CommentFileError as error:
+            st.error(error_message(error, "de"))
+            return pd.DataFrame(columns=['comment_text', 'original_line']), None
+        st.success(f"{len(df)} Kommentare erfolgreich extrahiert.")
+        return df, 'comment_text'
     
     def load_file_from_path(self, file_path):
         """

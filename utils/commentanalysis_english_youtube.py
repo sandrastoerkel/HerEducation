@@ -389,18 +389,14 @@ class VideoInfoFetcher:
         if not video_id:
             return None
         
+        # cached (at most once per day and video), review M4
+        from utils.video_info import extract_info_cached
+        info = extract_info_cached(video_id)
+        if info is None:
+            return None
         try:
-            from yt_dlp import YoutubeDL
-            
-            url = f"{YouTubeConstants.YOUTUBE_BASE_URL}{video_id}"
-            ydl_opts = self._get_yt_dlp_options()
-            
-            with YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-                return self._process_video_info(video_id, info)
-                
-        except Exception as e:
-            st.warning(f"{YouTubeConstants.ERROR_MESSAGES['fetch_failed']}: {e}")
+            return self._process_video_info(video_id, info)
+        except Exception:
             return None
     
     def _get_yt_dlp_options(self) -> Dict[str, Any]:

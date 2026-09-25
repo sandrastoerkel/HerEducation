@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from collections import Counter
 import traceback
+from utils.safe_log import log_exception
 
 # Relative Imports - modernisiert
 try:
@@ -329,7 +330,7 @@ def train_topic_model(texts: List[str]) -> Optional[Any]:
         return topic_model
     except Exception as e:
         st.error(f"Fehler beim Training des BERTopic-Modells: {str(e)}")
-        st.error(traceback.format_exc())
+        log_exception("topic-analysis de", e)
         return None
 
 def extract_topic_information(topic_model: Any, config: TopicAnalysisConfig) -> Tuple[pd.DataFrame, Dict[int, str], List[TopicInfo]]:
@@ -821,7 +822,7 @@ def prepare_topic_analysis(df: pd.DataFrame, text_column: str) -> Tuple[pd.DataF
                 
     except Exception as e:
         st.error(f"Fehler bei der Vorbereitung der Themenanalyse: {str(e)}")
-        st.error(traceback.format_exc())
+        log_exception("topic-analysis de", e)
         return df, None, None, None, None
 
 def display_topic_analysis(df: pd.DataFrame, topic_model: Any, topic_df: pd.DataFrame, topic_info: pd.DataFrame, topic_labels: Dict[int, str]) -> None:

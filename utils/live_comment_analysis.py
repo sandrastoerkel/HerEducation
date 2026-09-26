@@ -127,7 +127,8 @@ TEXTS = {
         "download": "⬇️ Ergebnis als CSV herunterladen",
         "stage_unknown": "unbekannter Schritt",
         "busy": ("⏳ Gerade läuft eine andere Analyse auf diesem Server. "
-                 "Bitte in 1–2 Minuten erneut starten."),
+                 "Bitte in 1–2 Minuten erneut versuchen."),
+        "retry": "🔄 Erneut versuchen",
         "stopped": "Die Analyse wurde vorzeitig beendet.",
         "no_comments": "Nach dem Filtern sind keine Kommentare übrig.",
         "sentiment_failed": "Das Sentiment-Modell hat für die meisten Kommentare kein Ergebnis geliefert.",
@@ -161,7 +162,8 @@ TEXTS = {
         "download": "⬇️ Download result as CSV",
         "stage_unknown": "unknown step",
         "busy": ("⏳ Another analysis is currently running on this server. "
-                 "Please start again in 1–2 minutes."),
+                 "Please try again in 1–2 minutes."),
+        "retry": "🔄 Try again",
         "stopped": "The analysis was stopped early.",
         "no_comments": "No comments remain after filtering.",
         "sentiment_failed": "The sentiment model returned no result for most comments.",
@@ -266,16 +268,20 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
     if status != "pending":
         return
 
-    request = st.session_state.pop(k["request"], None)
-    if not request:
+    if not st.session_state.get(k["request"]):
+        st.session_state.pop(k["request"], None)
         st.session_state[k["status"]] = None
         return
 
     lock = _run_lock()
     if not lock.acquire(blocking=False):
-        # Eine andere Sitzung rechnet gerade – nicht parallel starten (RAM/CPU der Cloud)
+        # Eine andere Sitzung rechnet gerade – nicht parallel starten (RAM/CPU der Cloud).
+        # Die Anfrage bleibt erhalten; "Erneut versuchen" startet sie ohne neue Auswahl
+        # (Nachreview NEU7, 26.09.2026: frueher war sie hier schon verworfen).
         st.session_state[k["status"]] = "busy"
         return
+    # Erst mit dem Lock die Anfrage (Datei-Bytes) aus der Sitzung nehmen
+    request = st.session_state.pop(k["request"])
 
     st.session_state[k["status"]] = "running"
     st.session_state[k["stage"]] = None
@@ -342,7 +348,13 @@ def render_status(lang: str) -> None:
         st.session_state[k["ignore_submit"]] = True
     elif status == "busy":
         st.warning(t["busy"])
-        st.session_state[k["status"]] = None
+        if st.session_state.get(k["request"]):
+            # Status bleibt "busy", bis erneut versucht oder neu gestartet wird (NEU7)
+            if st.button(t["retry"], key=f"live_retry_{lang}"):
+                st.session_state[k["status"]] = "pending"
+                st.rerun()
+        else:
+            st.session_state[k["status"]] = None
     elif status == "failed":
         st.warning(t["failed"].format(msg=st.session_state.get(k["error"], "")))
         st.session_state[k["status"]] = None

@@ -392,7 +392,8 @@ def test_loader_source_does_not_swallow_errors():
         source = (ROOT / name).read_text(encoding="utf-8")
         emotion = source.split("def load_emotion_model")[1].split("\n@st.cache_resource")[0]
         assert "return None" not in emotion and "except" not in emotion
-        assert source.count("ttl=MODEL_TTL_SECONDS") == 3
+        # Nachreview NEU3: kein ttl (Streamlit gibt im Leerlauf nichts frei, nur Doppel-Speicher beim Nachladen)
+        assert source.count("@st.cache_resource(show_spinner=False)") == 3 and "ttl=" not in source
         assert "def clear_models" in source
 
 
@@ -466,3 +467,109 @@ def test_mentions_are_masked():
     assert mask_mentions("mail an a@b.de") == "mail an a@b.de"
     df = read_comments(b'{"text": "@someone_1 genau so"}\n')
     assert list(df["comment_text"]) == ["@… genau so"]
+
+
+# ---------------------------------------------------------------------------
+# K2 (26.09.2026): Befunde aus dem Fable-Nachreview (NEU1, NEU2, NEU4, NEU6, NEU7)
+# ---------------------------------------------------------------------------
+
+def test_reader_csv_with_extra_fields_keeps_other_comments():
+    """NEU1: eine Zeile mit ueberzaehligen Feldern darf die uebrigen Kommentare nicht verschieben."""
+    data = b"text,author\na,x\nb,y\nextra,1,2,3\nc,z\nd,w\n"
+    texts = list(read_comments(data)["comment_text"])
+    assert {"a", "b", "c", "d"} <= set(texts)
+    assert None not in texts and "x" not in texts and "y" not in texts
+
+
+def test_reader_single_column_csv_with_unquoted_comma():
+    """NEU1: einspaltige CSV, Kommentar mit unmaskiertem Komma -> restliche Zeilen bleiben richtig."""
+    texts = list(read_comments(b"text\nhello, world\nfoo\nbar\n")["comment_text"])
+    assert texts[1:] == ["foo", "bar"]
+    assert texts[0] == "hello"                       # Rest nach dem Komma geht verloren, Zeile bleibt zugeordnet
+
+
+def test_mentions_after_zero_width_chars_are_masked():
+    """NEU2: YouTube setzt teils U+200B vor '@name' -> trotzdem maskieren."""
+    from utils.comment_file_reader import mask_mentions
+    for zw in ("​", "‌", "‍", "⁠", "﻿"):
+        assert mask_mentions(f"{zw}@name hi") == f"{zw}@… hi"
+        assert mask_mentions(f"Danke {zw}@Anna_B!") == f"Danke {zw}@…!"
+    assert mask_mentions("mail an a@b.de") == "mail an a@b.de"      # E-Mail bleibt
+    assert mask_mentions("​@… schon maskiert") == "​@… schon maskiert"
+    df = read_comments('{"text": "​@someone_1 genau so"}\n'.encode("utf-8"))
+    assert "someone_1" not in df["comment_text"].iloc[0]
+
+
+def test_example_csvs_have_no_unmasked_mentions():
+    """NEU2: In den Beispielanalysen stehen keine Nutzernamen (auch nicht hinter Zero-Width-Zeichen)."""
+    from utils.comment_file_reader import MENTION_PATTERN
+    from utils.example_analyses import EXAMPLES, EXAMPLES_DIR
+    checked = 0
+    for example in EXAMPLES:
+        path = EXAMPLES_DIR / example["file"]
+        df = pd.read_csv(path, dtype=str, keep_default_na=False)
+        hits = [m.group(0) for t in df["comment_text"] for m in MENTION_PATTERN.finditer(t)
+                if m.group(0) != "@…"]
+        assert not hits, (path.name, len(hits))
+        checked += 1
+    assert checked == 4
+
+
+def test_error_message_unknown_lang_and_reason():
+    """NEU6: kein KeyError bei unbekannter Sprache UND unbekanntem Grund."""
+    from utils.comment_file_reader import error_message
+    assert error_message(CommentFileError("xyz"), "fr").startswith("The file could not be read")
+    assert error_message(CommentFileError("empty"), "de") == "In der Datei wurden keine Kommentare gefunden."
+
+
+def test_video_info_errors_are_not_cached(monkeypatch):
+    """NEU4: Ein Netzfehler wird nicht 24 h als None gecacht."""
+    import types
+    from utils import video_info
+    calls = {"n": 0}
+
+    class FakeYDL:
+        def __init__(self, opts):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def extract_info(self, url, download=False):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise OSError("netz weg")
+            return {"title": "T", "view_count": 5}
+
+    monkeypatch.setitem(sys.modules, "yt_dlp", types.SimpleNamespace(YoutubeDL=FakeYDL))
+    video_info._extract_info.clear()
+    assert video_info.extract_info_cached("abcdefghijk") is None
+    assert video_info.extract_info_cached("abcdefghijk") == {"title": "T", "view_count": 5}
+    assert video_info.extract_info_cached("abcdefghijk") == {"title": "T", "view_count": 5}
+    assert calls["n"] == 2                              # Erfolg gecacht, Fehler nicht
+    video_info._extract_info.clear()
+
+
+def test_busy_keeps_request_and_retry_starts_run(fake_models):
+    """NEU7: Bei 'busy' bleibt die Anfrage erhalten; 'Erneut versuchen' startet sie ohne neue Auswahl."""
+    from utils.live_comment_analysis import _run_lock
+    path = next(p for p in COMMENTS_DIR.iterdir() if "Lanz" in p.name)
+    lock = _run_lock()
+    assert lock.acquire(blocking=False)
+    try:
+        at = _run_request(DE_PAGE, "de", path.read_bytes(), path.name)
+        assert "andere Analyse" in _warnings(at)
+        assert at.session_state["live_de_status"] == "busy"
+        assert at.session_state["live_de_request"]["name"] == path.name
+    finally:
+        lock.release()
+    retry = next(b for b in at.button if "Erneut versuchen" in str(b.label))
+    retry.click()
+    at.run()
+    assert not at.exception, at.exception
+    assert at.session_state["live_de_status"] == "done"
+    assert at.session_state["result_source"] == "live"
+    assert "live_de_request" not in at.session_state

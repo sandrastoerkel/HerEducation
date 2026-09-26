@@ -36,18 +36,24 @@ class _QuietLogger:
 
 
 @st.cache_data(ttl=86400, show_spinner=False, max_entries=50)
+def _extract_info(video_id: str) -> dict:
+    """yt-dlp extract_info, gecacht (24 h). Fehler werden NICHT abgefangen:
+    st.cache_data speichert keine Exceptions – ein Netzfehler wird so nicht 24 h lang
+    als None gecacht (Nachreview NEU4, 26.09.2026)."""
+    from yt_dlp import YoutubeDL
+    opts = {"quiet": True, "no_warnings": True, "extract_flat": False, "socket_timeout": 10,
+            "logger": _QuietLogger()}
+    with YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+    return {k: info.get(k) for k in INFO_KEYS if info.get(k) is not None}
+
+
 def extract_info_cached(video_id: str) -> Optional[dict]:
-    """yt-dlp extract_info, gecacht; None bei Fehler (nur Fehlertyp ins Log)."""
+    """Video-Infos (Erfolg 24 h gecacht); None bei Fehler (nur Fehlertyp ins Log)."""
     try:
-        from yt_dlp import YoutubeDL
+        return _extract_info(video_id)
     except ImportError:
         return None
-    try:
-        opts = {"quiet": True, "no_warnings": True, "extract_flat": False, "socket_timeout": 10,
-                "logger": _QuietLogger()}
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-        return {k: info.get(k) for k in INFO_KEYS if info.get(k) is not None}
     except Exception as error:  # noqa: BLE001
         log_exception("video-info", error)
         return None

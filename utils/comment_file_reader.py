@@ -18,7 +18,8 @@ Regeln:
 - Leere Kommentare werden entfernt. Kein Treffer -> CommentFileError mit Grund.
 - YouTube-Namen in Antworten ("@name ...") werden durch "@…" ersetzt (Entscheidung Sandra
   25.09.2026: keine Nutzernamen in der oeffentlichen Datenvorschau). Gilt fuer jedes @-Wort
-  am Textanfang oder nach einem Leerzeichen; E-Mail-Adressen bleiben unberuehrt.
+  am Textanfang, nach einem Leerzeichen oder nach einem unsichtbaren Zeichen (Zero-Width-Space);
+  E-Mail-Adressen bleiben unberuehrt.
 """
 import io
 import json
@@ -30,7 +31,11 @@ import pandas as pd
 # Reihenfolge = Prioritaet (Vergleich ohne Gross-/Kleinschreibung)
 TEXT_COLUMNS = ["text", "comment_text", "comment", "kommentar", "content", "body", "message", "textoriginal"]
 OUTPUT_COLUMN = "comment_text"
-MENTION_PATTERN = re.compile(r"(?<!\S)@[\w\-]+(?:\.[\w\-]+)*")
+# Vor dem "@" steht Textanfang, ein Leerzeichen ODER ein unsichtbares Zeichen
+# (Zero-Width-Space U+200B, ZWNJ U+200C, ZWJ U+200D, Word-Joiner U+2060, BOM U+FEFF).
+# YouTube setzt bei Antworten teilweise U+200B vor "@name" (Nachreview NEU2, 26.09.2026).
+# Die unsichtbaren Zeichen bleiben im Text (ZWJ gehoert z. B. zu Emoji-Folgen).
+MENTION_PATTERN = re.compile(r"(?<![^\s\u200b-\u200d\u2060\ufeff])@[\w\-]+(?:\.[\w\-]+)*")
 MENTION_MASK = "@…"
 
 
@@ -114,7 +119,9 @@ def _read_csv(text: str) -> List[Optional[str]]:
     for delimiter in (",", ";", "\t"):
         try:
             df = pd.read_csv(io.StringIO(text), sep=delimiter, dtype=str, keep_default_na=False,
-                             engine="python", on_bad_lines="skip")
+                             engine="python", on_bad_lines="skip", index_col=False)
+            # index_col=False (Nachreview NEU1): Sonst macht pandas bei einer Zeile mit
+            # ueberzaehligen Feldern die vorderen Spalten zum Index und verschiebt alle Texte.
         except Exception as error:  # noqa: BLE001 – naechstes Trennzeichen probieren
             last_error = error
             continue
@@ -170,4 +177,5 @@ MESSAGES = {
 
 
 def error_message(error: CommentFileError, lang: str) -> str:
-    return MESSAGES.get(lang, MESSAGES["en"]).get(error.reason, MESSAGES[lang]["unreadable"])
+    messages = MESSAGES.get(lang, MESSAGES["en"])  # Nachreview NEU6: kein KeyError bei fremder Sprache
+    return messages.get(error.reason, messages["unreadable"])

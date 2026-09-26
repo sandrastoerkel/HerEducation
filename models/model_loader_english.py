@@ -10,16 +10,16 @@ warnings.filterwarnings("ignore", message=".*Tried to instantiate class '__path_
 # Reduce log level for transformers library
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
-# Gecachte Modelle verfallen 30 Min. nach dem Laden (Review M3; Streamlit-ttl zaehlt ab dem Laden);
-# Neuladen kostet ca. 14 s (MESS1). Die kostenlose Streamlit-Cloud hat wenig RAM.
-MODEL_TTL_SECONDS = 1800
+# Kein ttl (Nachreview NEU3, 26.09.2026): Streamlit gibt abgelaufene Eintraege im Leerlauf
+# nicht frei, sondern erst beim naechsten Laden – dann liegen altes und neues Modell kurz
+# gleichzeitig im Speicher. Freigabe erfolgt gezielt ueber clear_models() beim Sprachwechsel.
 
 # transformers/torch werden erst beim ersten Laden eines Modells importiert
 # (nicht schon beim Seitenaufruf) – spart Zeit und Arbeitsspeicher, solange
 # niemand eine Live-Analyse startet.
 
 
-@st.cache_resource(show_spinner=False, ttl=MODEL_TTL_SECONDS)
+@st.cache_resource(show_spinner=False)
 def load_sentiment_model():
     """
     Loads the English sentiment analysis model
@@ -31,7 +31,7 @@ def load_sentiment_model():
     return pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
 
 
-@st.cache_resource(show_spinner=False, ttl=MODEL_TTL_SECONDS)
+@st.cache_resource(show_spinner=False)
 def load_emotion_model():
     """
     Loads the English emotion analysis model.
@@ -46,7 +46,7 @@ def load_emotion_model():
     return AllScoresPipeline(emotion_classifier)
 
 
-@st.cache_resource(show_spinner=False, ttl=MODEL_TTL_SECONDS)
+@st.cache_resource(show_spinner=False)
 def load_embedding_model():
     """Satz-Embedding-Modell fuer BERTopic (einmal laden, von allen Laeufen geteilt)."""
     from sentence_transformers import SentenceTransformer

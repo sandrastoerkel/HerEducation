@@ -2,7 +2,7 @@
 streamlit==1.45.0
 pydeck==0.8.0
 pandas>=2.0.0
-numpy>=1.24.0
+numpy==2.4.6  # wie _bench/.venv (MESS1–3); braucht Python >= 3.11
 plotly>=5.14.0
 scikit-learn>=1.3.0
 matplotlib>=3.7.0
@@ -12,7 +12,7 @@ seaborn>=0.12.0
 # Exakt gepinnt (25.09.2026): Versionen aus der MESS1-Messung auf dem Mac (_bench/.venv).
 # Ungepinnt zieht jeder neue Cloud-Build die neueste Version; mit transformers 5.17
 # wirkt return_all_scores nicht mehr (Emotionsanalyse falsch/leer, behoben in
-# models/pipeline_adapters.py). Welche Version die Cloud aktuell hat: [OFFEN].
+# models/pipeline_adapters.py). Cloud-App laeuft mit Python 3.11 (geprueft 25.09.2026).
 torch==2.14.0
 transformers==5.17.0
 sentence-transformers==6.1.0

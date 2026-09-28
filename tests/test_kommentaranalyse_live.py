@@ -764,3 +764,63 @@ def test_example_shows_special_analysis_tab(page, example):
     errors = [e.value for e in at.error if "set_page_config" not in str(e.value)]
     assert not errors, errors
     assert ("nachträglich" in text) if lang == "de" else ("computed afterwards" in text)
+
+
+# ---------------------------------------------------------------------------
+# K4 (28.09.2026): Einleitungen, NEU-c, deutsche Kosmetik
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("page,expected", [
+    (DE_PAGE, ["Was denken und fühlen Menschen über ein Thema?", "online bis zu 100 Kommentare, lokal ohne Grenze"]),
+    (EN_PAGE, ["What do people think and feel about a topic?", "online up to 100 comments, locally without a limit"]),
+    ("pages/07_Globale_Diskurs_Analysis.py", ["How do different countries talk about education?"]),
+])
+def test_page_intros(page, expected):
+    at = AppTest.from_file(page, default_timeout=TIMEOUT)
+    at.run()
+    assert not at.exception, at.exception
+    text = "\n".join(str(m.value) for m in at.markdown)
+    for snippet in expected:
+        assert snippet in text, snippet
+
+
+@pytest.mark.parametrize("dropped,expected", [(1, "1 non-English comment was skipped."),
+                                               (2, "2 non-English comments were skipped.")])
+def test_non_english_note_singular_and_plural(monkeypatch, dropped, expected):
+    """NEU-c: Einzahl/Mehrzahl in der Hinweiszeile nach dem Sprachfilter."""
+    import runpy
+    import types
+    import utils.commentanalysis_english_language_detection as detection
+
+    class FakeManager:
+        def filter_english_comments(self, df, text_column, show_ui=False):
+            return df.iloc[dropped:], None
+
+    monkeypatch.setattr(detection, "create_language_detection_manager", lambda: FakeManager())
+    monkeypatch.setitem(sys.modules, "langdetect", types.ModuleType("langdetect"))
+    keep_english = runpy.run_path(EN_PAGE, run_name="page06_test")["_keep_english"]
+    notes = []
+    keep_english(pd.DataFrame({"comment_text": ["a", "b", "c"]}), "comment_text", notes)
+    assert notes == [expected]
+
+
+def test_german_metrics_have_no_delta_and_german_chart_labels():
+    """Kosmetik DE: keine gruenen Pfeile (kein delta), Anteil in der Zahl; Diagramme mit deutschen Labels;
+    'Sentiment-Verteilung' nicht doppelt."""
+    at = AppTest.from_file(DE_PAGE, default_timeout=TIMEOUT)
+    at.run()
+    assert not at.exception, at.exception
+    metrics = {m.label: m for m in at.metric}
+    for label in ("Positive Kommentare", "Neutrale Kommentare", "Negative Kommentare"):
+        assert not metrics[label].delta, label
+    assert metrics["Negative Kommentare"].value == "1.197 (57,5 %)"
+    from utils.labels_de import translate_labels_de
+    import plotly.express as px
+    fig = translate_labels_de(px.bar(x=["negative", "none of them"], y=[2, 1], color=["negative", "none of them"],
+                                     labels={"x": "Emotion", "y": "Anzahl"}))
+    assert [t.name for t in fig.data] == ["negativ", "keins davon"]
+    assert list(fig.data[0].x) == ["negativ"]
+    assert "=negativ<" in fig.data[0].hovertemplate
+    import inspect
+    from utils import sentiment_analysis
+    assert "title='Sentiment-Verteilung'" not in inspect.getsource(sentiment_analysis)

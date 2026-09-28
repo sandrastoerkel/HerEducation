@@ -159,14 +159,12 @@ def setup_page():
     )
     
     st.title("🌍 Global Discourse Analysis")
+    # Intro (K4, text approved 28.09.2026: 2026-09-28_Texte_Kommentaranalyse-anwenderbezogen.md, section 5)
     st.markdown("""
-    **Enterprise Cross-Country Discourse Comparison with automatic country detection**
-    
-    This analysis enables comparison of comment discourses between different countries 
-    based on previously performed analyses with Smart Topic Labels.
-    
-    🚀 **NEW:** Automatic country detection from filenames (50+ countries supported)
-    """)
+**How do different countries talk about education?**
+
+This page compares comment analyses from several countries: sentiment on a world map, topics and emotions by country. With **Theme Search** you pick one of eight themes, such as *Gender & Equality* or *Technology & AI*, or enter your own keywords. You then see how people in each country feel about it, with the matching comments to read.
+""")
 
 
 # =============================================================================

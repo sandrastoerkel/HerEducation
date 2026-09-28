@@ -4,6 +4,8 @@ Strukturierte Analysen für Bildungs- und Gender-Themen mit Type Hints
 """
 
 import streamlit as st
+
+from utils.labels_de import count_with_share_de, translate_labels_de  # K4: deutsche Diagramm-Labels
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -37,6 +39,9 @@ EMOTION_COLORS: Dict[str, str] = {
     "joy": "#FFD700",          # Gold
     "none of them": "#81D4FA"  # Light Blue
 }
+
+# Anzeige-Namen der Analyse-Typen (K4: vorher "Custom" im Diagrammtitel der deutschen Seite)
+ANALYSIS_TYPE_DE: Dict[str, str] = {"Custom": "eigene Suchwörter"}
 
 # Emotion Categorization
 EMOTION_MAPPING: Dict[str, List[str]] = {
@@ -307,7 +312,7 @@ def render_emotion_distribution_chart(result: AnalysisResult) -> None:
         color=result.emotion_percentages.index,
         color_discrete_map=EMOTION_COLORS,
         labels={'x': 'Emotion', 'y': 'Anteil (%)'},
-        title=f'Emotionale Reaktion zu: {result.analysis_type.title()}'
+        title=f'Emotionale Reaktion zu: {ANALYSIS_TYPE_DE.get(result.analysis_type, result.analysis_type)}'
     )
     
     fig.update_layout(
@@ -317,7 +322,7 @@ def render_emotion_distribution_chart(result: AnalysisResult) -> None:
         height=CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key=f"emotion_chart_{result.analysis_type}")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key=f"emotion_chart_{result.analysis_type}")
 
 def render_topic_distribution_chart(result: AnalysisResult) -> None:
     """
@@ -334,7 +339,7 @@ def render_topic_distribution_chart(result: AnalysisResult) -> None:
         y=result.topic_distribution.index,
         orientation='h',
         labels={'x': 'Anzahl Kommentare', 'y': 'Thema'},
-        title=f'Verteilung der {result.analysis_type.title()}-Kommentare auf Themen'
+        title=f'Verteilung der Kommentare zu „{ANALYSIS_TYPE_DE.get(result.analysis_type, result.analysis_type)}“ auf Themen'
     )
     
     fig.update_layout(
@@ -343,7 +348,7 @@ def render_topic_distribution_chart(result: AnalysisResult) -> None:
         height=max(CHART_HEIGHT, len(result.topic_distribution) * 30)  # Dynamische Höhe
     )
     
-    st.plotly_chart(fig, use_container_width=True, key=f"topic_chart_{result.analysis_type}")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key=f"topic_chart_{result.analysis_type}")
 
 def render_emotion_category_metrics(result: AnalysisResult) -> None:
     """
@@ -357,9 +362,10 @@ def render_emotion_category_metrics(result: AnalysisResult) -> None:
     neg_count, neg_pct = result.emotion_categories.get(EmotionCategory.NEGATIVE.value, (0, 0.0))
     neu_count, neu_pct = result.emotion_categories.get(EmotionCategory.NEUTRAL.value, (0, 0.0))
     
-    col1.metric("Positiv", f"{pos_count}", f"{pos_pct:.1f}%")
-    col2.metric("Negativ", f"{neg_count}", f"{neg_pct:.1f}%")
-    col3.metric("Neutral", f"{neu_count}", f"{neu_pct:.1f}%")
+    # K4: Anteil in der Zahl statt als delta (gruener Pfeil wirkte wie ein Zuwachs)
+    col1.metric("Positiv", count_with_share_de(pos_count, pos_pct / 100))
+    col2.metric("Negativ", count_with_share_de(neg_count, neg_pct / 100))
+    col3.metric("Neutral", count_with_share_de(neu_count, neu_pct / 100))
 
 def render_example_comments(result: AnalysisResult, text_column: str, topic_labels: Dict[int, str]) -> None:
     """

@@ -1,4 +1,6 @@
 import streamlit as st
+
+from utils.labels_de import count_with_share_de, translate_labels_de  # K4: deutsche Diagramm-Labels
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -340,8 +342,7 @@ def render_sentiment_distribution_chart(sentiment_counts: pd.Series) -> None:
         color=sentiment_counts.index,
         color_discrete_map=SENTIMENT_COLORS,
         labels={'x': 'Sentiment', 'y': 'Anzahl'},
-        title='Sentiment-Verteilung'
-    )
+    )   # K4: kein Diagrammtitel – die Abschnittsueberschrift nennt ihn schon
     
     fig.update_layout(
         xaxis_title='Sentiment',
@@ -350,7 +351,7 @@ def render_sentiment_distribution_chart(sentiment_counts: pd.Series) -> None:
         height=CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="sentiment_distribution_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="sentiment_distribution_chart")
 
 def render_confidence_histogram(confidence_data: pd.Series) -> None:
     """
@@ -360,8 +361,7 @@ def render_confidence_histogram(confidence_data: pd.Series) -> None:
         x=confidence_data,
         nbins=HISTOGRAM_BINS,
         labels={'x': 'Konfidenz', 'y': 'Anzahl'},
-        title='Verteilung der Modell-Konfidenz'
-    )
+    )   # K4: kein Diagrammtitel – die Abschnittsueberschrift nennt ihn schon
     
     fig.update_layout(
         xaxis_title='Konfidenz',
@@ -369,7 +369,7 @@ def render_confidence_histogram(confidence_data: pd.Series) -> None:
         height=CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="confidence_histogram_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="confidence_histogram_chart")
 
 def render_sentiment_statistics(stats: SentimentStatistics) -> None:
     """
@@ -378,9 +378,10 @@ def render_sentiment_statistics(stats: SentimentStatistics) -> None:
     st.write(f"Durchschnittliche Modell-Konfidenz: {stats.average_confidence:.2f}")
     
     col1, col2, col3 = st.columns(3)
-    col1.metric("Positive Kommentare", stats.positive_count, f"{stats.positive_percentage:.1%}")
-    col2.metric("Neutrale Kommentare", stats.neutral_count, f"{stats.neutral_percentage:.1%}")
-    col3.metric("Negative Kommentare", stats.negative_count, f"{stats.negative_percentage:.1%}")
+    # K4: Anteil in der Zahl statt als delta (gruener Pfeil wirkte wie ein Zuwachs)
+    col1.metric("Positive Kommentare", count_with_share_de(stats.positive_count, stats.positive_percentage))
+    col2.metric("Neutrale Kommentare", count_with_share_de(stats.neutral_count, stats.neutral_percentage))
+    col3.metric("Negative Kommentare", count_with_share_de(stats.negative_count, stats.negative_percentage))
 
 def render_confidence_filter_ui(df: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
     """
@@ -422,8 +423,7 @@ def render_high_confidence_sentiment_chart(high_confidence_df: pd.DataFrame) -> 
         color=sentiment_counts.index,
         color_discrete_map=SENTIMENT_COLORS,
         labels={'x': 'Sentiment', 'y': 'Anzahl'},
-        title='Sentiment-Verteilung (Hohe Konfidenz)'
-    )
+    )   # K4: kein Diagrammtitel – die Abschnittsueberschrift nennt ihn schon
     
     fig.update_layout(
         xaxis_title='Sentiment',
@@ -432,7 +432,7 @@ def render_high_confidence_sentiment_chart(high_confidence_df: pd.DataFrame) -> 
         height=CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="high_confidence_sentiment_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="high_confidence_sentiment_chart")
 
 def render_sentiment_examples(df: pd.DataFrame, text_column: str) -> None:
     """

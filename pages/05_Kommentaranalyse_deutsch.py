@@ -39,7 +39,7 @@ from utils.example_analyses import render_example_picker, known_source_names, re
 from utils.comment_file_reader import CommentFileError, error_message, read_comments, reader_notes
 from utils.live_comment_analysis import (
     LiveAnalysisError, check_sentiment_result, free_other_language_models, is_cloud, is_live_result,
-    limit_comments, live_max_comments, render_live_section, render_result_download, render_status,
+    limit_comments, live_max_comments, online_max_comments, render_live_section, render_result_download, render_status,
     run_pending_analysis, sample_note)
 from utils.safe_log import log_exception
 from utils.live_comment_analysis import fmt_int
@@ -386,14 +386,18 @@ def main():
     # Page-Config wird bereits von setup_standard_page() gesetzt
     setup_standard_page("Kommentaranalyse (Deutsch)", "🗣️")
     st.title("Kommentaranalyse (Deutsch)")
-    st.markdown("""
-    Diese Seite ermöglicht die Analyse von deutschen Kommentaren hinsichtlich:
-    - 💭 **Sentiment** (positiv/negativ/neutral)
-    - 😊 **Emotionen** (Freude, Trauer, Angst, etc.)
-    - 🏷️ **Themen** und Schlüsselkonzepte
-    
-    """)
-    st.markdown("Oben sehen Sie eine fertige Beispielanalyse, weiter unten können Sie eine eigene Analyse starten.")
+    # Einleitung (K4, Text freigegeben 28.09.2026: 2026-09-28_Texte_Kommentaranalyse-anwenderbezogen.md, Abschnitt 3)
+    st.markdown(f"""
+**Was denken und fühlen Menschen über ein Thema?**
+
+Diese Seite wertet YouTube-Kommentare automatisch aus:
+- **Stimmung:** positiv, neutral oder negativ
+- **Gefühle:** Wut, Angst, Ekel, Trauer, Freude oder keins davon
+- **Themen:** worüber gesprochen wird und welche Gefühle dahinterstecken
+- **Spezial-Analysen:** Suche nach Bildungs- oder Gender-Themen oder nach eigenen Suchwörtern
+
+Oben sehen Sie eine fertige Beispielanalyse. Darunter können Sie eine eigene Analyse starten (online bis zu {online_max_comments()} Kommentare, lokal ohne Grenze).
+""")
     
     # Initialize Session State for persistent data (UNVERÄNDERT)
     if 'current_file' not in st.session_state:

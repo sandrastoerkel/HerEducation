@@ -689,9 +689,9 @@ def main():
     setup_page()
     
     # *** ENHANCED HEADER WITH WORLD MAP FEATURE ***
-    st.markdown("""
-    ### 🚀 Version 2.1 - Enhanced Theme Search + Interactive World Map
-    
+    # K4: The new intro (setup_page) explains the page; the version notes stay available, collapsed.
+    with st.expander("🚀 Version 2.1 – feature notes", expanded=False):
+        st.markdown("""
     **New Features in this version:**
     - 🗺️ **Interactive World Map** with sentiment colors and detailed hover tooltips
     - 🎭 Predefined theme categories (Education, Gender, Technology, etc.)

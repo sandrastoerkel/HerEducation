@@ -77,16 +77,21 @@ class UIConstants:
     MAIN_TITLE = "📝 Comment Analysis (English)"
     
     # Descriptions
+    # Intro (K4, text approved 28.09.2026: 2026-09-28_Texte_Kommentaranalyse-anwenderbezogen.md, section 4).
+    # {max_comments} is filled in by display_main_header(). The note on non-English comments was kept.
     MAIN_DESCRIPTION = """
-    This page enables comprehensive analysis of **English comments only** regarding:
-    - 💭 **Sentiment** (positive/negative/neutral)
-    - 😊 **Emotions** (joy, sadness, anger, fear, etc.)
-    - 🏷️ **Topics** and key concepts
-    
-    📌 **Note**: This analysis is specifically designed for English text. Comments in other languages will be automatically filtered out.
-    
-    Above you see a finished example analysis; further down you can run your own analysis.
-    """
+**What do people think and feel about a topic?**
+
+This page analyses YouTube comments automatically:
+- **Sentiment:** positive, neutral or negative
+- **Emotions:** anger, fear, disgust, sadness, joy, surprise or neutral
+- **Topics:** what people talk about and which emotions sit behind it
+- **Special analyses:** search for education, gender or technology topics, or for your own keywords
+
+Above you see a ready-made example analysis. Below, you can start your own analysis (online up to {max_comments} comments, locally without a limit).
+
+📌 Comments in other languages are filtered out automatically.
+"""
     
     # Model information
     SENTIMENT_MODEL_INFO = {
@@ -168,7 +173,8 @@ class HeaderRenderer:
     def display_main_header(self) -> None:
         """Display the main page header and description"""
         st.title(UIConstants.MAIN_TITLE)
-        st.markdown(UIConstants.MAIN_DESCRIPTION)
+        from utils.live_comment_analysis import online_max_comments
+        st.markdown(UIConstants.MAIN_DESCRIPTION.format(max_comments=online_max_comments()))
     
     def display_model_info(self, model_type: str) -> None:
         """

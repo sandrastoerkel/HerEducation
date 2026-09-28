@@ -103,6 +103,11 @@ def live_cooldown_seconds() -> int:
     return CLOUD_DEFAULT_COOLDOWN_SECONDS if is_cloud() else 0
 
 
+def online_max_comments() -> int:
+    """Obergrenze der Online-Version fuer Texte (lokal: der Cloud-Standard, damit der Text stimmt)."""
+    return (live_max_comments() or CLOUD_DEFAULT_MAX_COMMENTS) if is_cloud() else CLOUD_DEFAULT_MAX_COMMENTS
+
+
 def limit_comments(df: pd.DataFrame, max_comments: Optional[int]) -> Tuple[pd.DataFrame, int]:
     """Feste Zufallsstichprobe (Reihenfolge der Datei bleibt erhalten), wenn die Datei zu gross ist."""
     total = len(df)

@@ -322,7 +322,8 @@ def _keep_english(df, text_column, notes):
     filtered = filtered.reset_index(drop=True)
     skipped = len(df) - len(filtered)
     if skipped:
-        notes.append(f"{fmt_int(skipped, 'en')} non-English comments were skipped.")
+        word = "comment was" if skipped == 1 else "comments were"      # NEU-c (Cloud-Nachtest 28.09.2026)
+        notes.append(f"{fmt_int(skipped, 'en')} non-English {word} skipped.")
     return filtered
 
 

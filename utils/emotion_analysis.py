@@ -6,6 +6,8 @@ enterprise architecture, type safety, and contextual emotion recognition.
 """
 
 import streamlit as st
+
+from utils.labels_de import count_with_share_de, translate_labels_de  # K4: deutsche Diagramm-Labels
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -774,7 +776,7 @@ def render_german_emotion_distribution_chart(statistics: GermanEmotionStatistics
         height=GermanEmotionAnalysisConstants.UI_CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="german_emotion_distribution_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="german_emotion_distribution_chart")
 
 
 def render_german_model_vs_linguistic_chart(df: pd.DataFrame, emotion_columns: List[str]) -> None:
@@ -813,7 +815,7 @@ def render_german_model_vs_linguistic_chart(df: pd.DataFrame, emotion_columns: L
         height=GermanEmotionAnalysisConstants.UI_CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="german_model_vs_linguistic_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="german_model_vs_linguistic_chart")
 
 
 def render_german_weighted_comparison_chart(
@@ -857,7 +859,7 @@ def render_german_weighted_comparison_chart(
         height=GermanEmotionAnalysisConstants.UI_CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="german_weighted_comparison_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="german_weighted_comparison_chart")
 
 
 def render_german_emotion_statistics(statistics: GermanEmotionStatistics) -> None:
@@ -866,23 +868,20 @@ def render_german_emotion_statistics(statistics: GermanEmotionStatistics) -> Non
     
     with col1:
         st.metric(
-            "Positive Emotionen", 
-            statistics.positive_count,
-            f"{statistics.positive_percentage:.1%}"
+            "Positive Emotionen",
+            count_with_share_de(statistics.positive_count, statistics.positive_percentage)   # K4: ohne Pfeil
         )
     
     with col2:
         st.metric(
-            "Negative Emotionen", 
-            statistics.negative_count,
-            f"{statistics.negative_percentage:.1%}"
+            "Negative Emotionen",
+            count_with_share_de(statistics.negative_count, statistics.negative_percentage)
         )
     
     with col3:
         st.metric(
-            "Neutrale Emotionen", 
-            statistics.neutral_count,
-            f"{statistics.neutral_percentage:.1%}"
+            "Neutrale Emotionen",
+            count_with_share_de(statistics.neutral_count, statistics.neutral_percentage)
         )
 
 
@@ -936,7 +935,7 @@ def render_german_emotion_examples(
                 height=GermanEmotionAnalysisConstants.UI_CHART_HEIGHT_SMALL
             )
             
-            st.plotly_chart(fig, use_container_width=True, key=f"german_example_{emotion}_{i}_chart")
+            st.plotly_chart(translate_labels_de(fig), use_container_width=True, key=f"german_example_{emotion}_{i}_chart")
             
             # Sentence count info
             sentence_count_col = f"{emotion}_sentence_count"
@@ -1064,7 +1063,7 @@ def render_german_emotions_by_topic_chart(df: pd.DataFrame, topic_labels: Dict[i
             height=GermanEmotionAnalysisConstants.UI_CHART_HEIGHT_LARGE
         )
         
-        st.plotly_chart(fig, use_container_width=True, key="german_emotions_by_topic_chart")
+        st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="german_emotions_by_topic_chart")
         
         # Show absolute numbers table (also sorted by frequency)
         st.write("Emotionen pro Thema (absolute Zahlen, sortiert nach Themenhäufigkeit):")
@@ -1139,7 +1138,7 @@ def render_german_emotional_categories_by_topic(emotion_counts: pd.DataFrame) ->
         height=GermanEmotionAnalysisConstants.UI_CHART_HEIGHT
     )
     
-    st.plotly_chart(fig, use_container_width=True, key="german_emotional_categories_by_topic_chart")
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True, key="german_emotional_categories_by_topic_chart")
     
     # Show data table
     st.dataframe(summary_df)
@@ -1257,7 +1256,7 @@ def render_german_parameter_experiment_results(results: List[ParameterTestResult
         annotation_text=f"Beste: {best_result.model_weight:.1f}"
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(translate_labels_de(fig), use_container_width=True)
     
     # Recommendation
     if abs(best_result.model_weight - current_weight) > 0.1:

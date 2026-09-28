@@ -29,12 +29,11 @@ def _free_port():
         return s.getsockname()[1]
 
 
-@pytest.fixture(scope="module")
-def server(tmp_path_factory):
+def _server(tmp_path_factory, **extra_env):
     dummy = tmp_path_factory.mktemp("lock") / "dummy.csv"
     dummy.write_text("text\nhallo\n", encoding="utf-8")
     port = _free_port()
-    env = dict(os.environ, LOCK_APP_FILE=str(dummy), HEREDUCATION_LIVE_ANALYSIS="1")
+    env = dict(os.environ, LOCK_APP_FILE=str(dummy), HEREDUCATION_LIVE_ANALYSIS="1", **extra_env)
     proc = subprocess.Popen(
         [sys.executable, "-m", "streamlit", "run", str(APP), "--server.port", str(port),
          "--server.headless", "true", "--browser.gatherUsageStats", "false"],
@@ -56,6 +55,17 @@ def server(tmp_path_factory):
         proc.wait(timeout=10)
     except subprocess.TimeoutExpired:
         proc.kill()
+
+
+@pytest.fixture(scope="module")
+def server(tmp_path_factory):
+    yield from _server(tmp_path_factory, HEREDUCATION_LIVE_COOLDOWN_SECONDS="0")
+
+
+@pytest.fixture(scope="module")
+def cooldown_server(tmp_path_factory):
+    """B2: Pause 60 s, Ersatz-Lauf ~12 s (ueber der Mindestlaufzeit von 10 s)."""
+    yield from _server(tmp_path_factory, HEREDUCATION_LIVE_COOLDOWN_SECONDS="60", LOCK_APP_STEPS="48")
 
 
 @pytest.fixture(scope="module")
@@ -104,3 +114,23 @@ def test_lock_free_after_interrupt_and_new_run_works(server, browser, mode):
     p2.close()
     if mode != "close":
         p1.close()
+
+
+def test_cooldown_after_finished_run_blocks_next_start(cooldown_server, browser):
+    """B2 (K4, 28.09.2026): Nach einem fertigen Lauf zeigt eine NEUE Sitzung die Pause statt zu rechnen;
+    die Sperre ist frei (kein 'busy'), die Auswahl bleibt fuer 'Erneut versuchen'."""
+    p1 = _open(browser, cooldown_server)
+    p1.get_by_role("button", name=START).click()
+    p1.wait_for_selector("text=STATUS=done", timeout=60000)
+    p1.close()
+
+    p2 = _open(browser, cooldown_server)
+    assert not _lock_state(p2)
+    assert "Pause nach der letzten Analyse" in p2.inner_text("body")     # Hinweis schon vor dem Klick
+    p2.get_by_role("button", name=START).click()
+    p2.wait_for_selector("text=STATUS=cooldown", timeout=20000)
+    body = p2.inner_text("body")
+    assert "legt nach jeder Analyse eine Pause von 1 Minute ein" in body
+    assert "andere Analyse" not in body
+    assert p2.get_by_role("button", name="Erneut versuchen").count() == 1
+    p2.close()

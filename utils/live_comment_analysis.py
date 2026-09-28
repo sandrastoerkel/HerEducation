@@ -152,11 +152,11 @@ TEXTS = {
                  "bei hoher Serverauslastung auch deutlich länger. Die Auswahl bleibt gemerkt – "
                  "bitte später auf „Erneut versuchen“ klicken."),
         "retry": "🔄 Erneut versuchen",
-        "cooldown": ("⏸️ Die kostenlose Online-Version legt nach jeder Analyse eine Pause von {pause} Minuten ein, "
+        "cooldown": ("⏸️ Die kostenlose Online-Version legt nach jeder Analyse eine Pause von {pause} {pause_word} ein, "
                      "damit der Server nicht gedrosselt wird. Die nächste Analyse ist in etwa {min} "
                      "{min_word} möglich. Die Auswahl bleibt gemerkt – bitte dann auf „Erneut versuchen“ klicken."),
         "cooldown_hint": ("⏸️ Pause nach der letzten Analyse: Die nächste Analyse ist in etwa {min} {min_word} "
-                          "möglich (die kostenlose Online-Version pausiert nach jedem Lauf {pause} Minuten)."),
+                          "möglich (die kostenlose Online-Version pausiert nach jedem Lauf {pause} {pause_word})."),
         "minute": ("Minute", "Minuten"),
         "cooldown_over": "✅ Die Pause ist vorbei – bitte auf „Erneut versuchen“ klicken.",
         "stopped": "Die Analyse wurde vorzeitig beendet.",
@@ -195,11 +195,11 @@ TEXTS = {
                  "much longer when the server is busy. Your selection is kept – "
                  "please click “Try again” later."),
         "retry": "🔄 Try again",
-        "cooldown": ("⏸️ The free online version pauses for {pause} minutes after each analysis so that the server "
+        "cooldown": ("⏸️ The free online version pauses for {pause} {pause_word} after each analysis so that the server "
                      "is not throttled. The next analysis is possible in about {min} {min_word}. "
                      "Your selection is kept – please click “Try again” then."),
         "cooldown_hint": ("⏸️ Pause after the last analysis: the next analysis is possible in about {min} {min_word} "
-                          "(the free online version pauses for {pause} minutes after each run)."),
+                          "(the free online version pauses for {pause} {pause_word} after each run)."),
         "minute": ("minute", "minutes"),
         "cooldown_over": "✅ The pause is over – please click “Try again”.",
         "stopped": "The analysis was stopped early.",
@@ -264,7 +264,8 @@ def _minutes_text(lang: str, seconds: float) -> Dict[str, object]:
     minutes = max(1, int(-(-seconds // 60)))        # aufrunden, mindestens 1
     words = TEXTS[lang]["minute"]
     pause = max(1, round(live_cooldown_seconds() / 60))
-    return {"min": minutes, "min_word": words[0] if minutes == 1 else words[1], "pause": pause}
+    return {"min": minutes, "min_word": words[0] if minutes == 1 else words[1],
+            "pause": pause, "pause_word": words[0] if pause == 1 else words[1]}
 
 
 def free_other_language_models(lang: str) -> None:

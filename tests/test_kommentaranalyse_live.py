@@ -824,3 +824,39 @@ def test_german_metrics_have_no_delta_and_german_chart_labels():
     import inspect
     from utils import sentiment_analysis
     assert "title='Sentiment-Verteilung'" not in inspect.getsource(sentiment_analysis)
+
+
+# ---------------------------------------------------------------------------
+# K4 (28.09.2026): NEU-a Modul-Scan trotz fileWatcherType = "none"
+# ---------------------------------------------------------------------------
+
+def test_watcher_patch_skips_module_scan_only_when_watcher_none(monkeypatch):
+    from streamlit import config
+    from streamlit.watcher import local_sources_watcher as lsw
+    from utils import streamlit_watcher_patch
+
+    original = lsw.LocalSourcesWatcher.update_watched_modules
+    calls = []
+    monkeypatch.setattr(lsw, "get_module_paths", lambda module: calls.append(module.__name__) or set())
+    watcher = lsw.LocalSourcesWatcher.__new__(lsw.LocalSourcesWatcher)   # ohne PagesManager
+    watcher._is_closed = False
+    watcher._cached_sys_modules = set()
+    watcher._folder_black_list = type("B", (), {"is_blacklisted": lambda self, p: True})()
+    watcher._watched_modules = {}
+    try:
+        config.set_option("server.fileWatcherType", "none")
+        assert streamlit_watcher_patch.apply() is True
+        assert streamlit_watcher_patch.apply() is True                    # zweimal: kein Doppel-Wrapper
+        watcher.update_watched_modules()
+        assert calls == [], "Scan trotz fileWatcherType none"
+        config.set_option("server.fileWatcherType", "auto")               # andere Typen: unveraendert
+        watcher.update_watched_modules()
+        assert calls, "bei 'auto' muss Streamlit weiter scannen"
+    finally:
+        lsw.LocalSourcesWatcher.update_watched_modules = original
+        config.set_option("server.fileWatcherType", "none")
+
+
+def test_repo_config_sets_watcher_none_and_main_applies_patch():
+    assert 'fileWatcherType = "none"' in (ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    assert "streamlit_watcher_patch.apply()" in (ROOT / "main.py").read_text(encoding="utf-8")

@@ -7,7 +7,11 @@ links keep working.
 """
 import streamlit as st
 
+from utils import streamlit_watcher_patch
 from utils.language_switcher_config import init_language
+
+# NEU-a: kein Modul-Scan pro Sitzung, wenn fileWatcherType = "none" (Begruendung im Modul)
+streamlit_watcher_patch.apply()
 
 init_language()
 

@@ -677,3 +677,31 @@ def test_cloud_default_limit_is_100(monkeypatch):
     assert L.live_max_comments() == 100
     monkeypatch.setattr(L, "is_cloud", lambda: False)
     assert L.live_max_comments() is None
+
+
+# ---------------------------------------------------------------------------
+# K4 (28.09.2026): B2 Pause zwischen Live-Laeufen
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_cooldown_message_next_to_start_button_and_retry(fake_models, monkeypatch, page, lang):
+    """B2: Waehrend der Pause startet kein Lauf; Meldung mit Minuten + 'Erneut versuchen' ueber dem Startknopf."""
+    from utils.live_comment_analysis import _cooldown
+    monkeypatch.setenv("HEREDUCATION_LIVE_COOLDOWN_SECONDS", "300")
+    path = next(p for p in COMMENTS_DIR.iterdir() if ("Lanz" if lang == "de" else "Malaysia") in p.name)
+    c = _cooldown()
+    c.ready_at = __import__("time").time() + 250
+    try:
+        at = _run_request(page, lang, path.read_bytes(), path.name)
+        assert at.session_state[f"live_{lang}_status"] == "cooldown"
+        assert at.session_state[f"live_{lang}_request"]["name"] == path.name
+        text = _warnings(at)
+        assert ("etwa 5 Minuten" in text) if lang == "de" else ("about 5 minutes" in text), text
+        assert ("Pause von 5 Minuten" in text) if lang == "de" else ("pauses for 5 minutes" in text)
+    finally:
+        c.ready_at = 0.0
+    retry = next(b for b in at.button if ("Erneut versuchen" if lang == "de" else "Try again") in str(b.label))
+    retry.click()
+    at.run()
+    assert not at.exception, at.exception
+    assert at.session_state[f"live_{lang}_status"] == "done"

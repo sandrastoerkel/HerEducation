@@ -19,6 +19,9 @@ Einstellungen (Umgebungsvariable oder st.secrets):
   HEREDUCATION_LIVE_MAX_COMMENTS / live_max_comments -> Obergrenze Kommentare je Lauf
       (Standard: Cloud 100 – Entscheidung Sandra 26.09.2026 nach Cloud-Test (CPU-Drosselung
       schon nach 2 Laeufen a 300); lokal ohne Grenze; 0 = ohne Grenze)
+  HEREDUCATION_LIVE_COOLDOWN_SECONDS / live_cooldown_seconds -> Pause nach jedem Live-Lauf fuer die
+      ganze App (Standard: Cloud 300 s – Entscheidung Sandra 28.09.2026 nach Cloud-Nachtest B2
+      (CPU-Drosselung nach ~5 Laeufen a 100 in ~10 Min.); lokal keine Pause; 0 = keine Pause)
 """
 import gc
 import os
@@ -42,6 +45,8 @@ CLOUD_DEFAULT_MAX_COMMENTS = 100   # Entscheidung Sandra 26.09.2026 (Cloud-Test 
 SAMPLE_SEED = 42                   # feste Stichprobe -> gleiche Datei = gleiche Auswahl
 SENTIMENT_FAIL_LIMIT = 0.5         # mehr als die Haelfte ohne Modell-Ergebnis -> Lauf gilt als gescheitert (M6)
 MAX_UPLOAD_MB = 10                 # passt zu server.maxUploadSize in .streamlit/config.toml
+CLOUD_DEFAULT_COOLDOWN_SECONDS = 300  # B2: Pause nach jedem Live-Lauf (Entscheidung Sandra 28.09.2026: 5 Min.)
+COOLDOWN_MIN_RUN_SECONDS = 10      # kuerzere Laeufe (z. B. Datei nicht lesbar) haben kaum gerechnet -> keine Pause
 
 
 class LiveAnalysisError(Exception):
@@ -85,6 +90,17 @@ def live_max_comments() -> Optional[int]:
         except ValueError:
             pass
     return CLOUD_DEFAULT_MAX_COMMENTS if is_cloud() else None
+
+
+def live_cooldown_seconds() -> int:
+    """Pause nach jedem Live-Lauf fuer die ganze App (B2)."""
+    value = _setting("HEREDUCATION_LIVE_COOLDOWN_SECONDS", "live_cooldown_seconds")
+    if value is not None:
+        try:
+            return max(0, int(str(value).strip()))
+        except ValueError:
+            pass
+    return CLOUD_DEFAULT_COOLDOWN_SECONDS if is_cloud() else 0
 
 
 def limit_comments(df: pd.DataFrame, max_comments: Optional[int]) -> Tuple[pd.DataFrame, int]:
@@ -131,6 +147,13 @@ TEXTS = {
                  "bei hoher Serverauslastung auch deutlich länger. Die Auswahl bleibt gemerkt – "
                  "bitte später auf „Erneut versuchen“ klicken."),
         "retry": "🔄 Erneut versuchen",
+        "cooldown": ("⏸️ Die kostenlose Online-Version legt nach jeder Analyse eine Pause von {pause} Minuten ein, "
+                     "damit der Server nicht gedrosselt wird. Die nächste Analyse ist in etwa {min} "
+                     "{min_word} möglich. Die Auswahl bleibt gemerkt – bitte dann auf „Erneut versuchen“ klicken."),
+        "cooldown_hint": ("⏸️ Pause nach der letzten Analyse: Die nächste Analyse ist in etwa {min} {min_word} "
+                          "möglich (die kostenlose Online-Version pausiert nach jedem Lauf {pause} Minuten)."),
+        "minute": ("Minute", "Minuten"),
+        "cooldown_over": "✅ Die Pause ist vorbei – bitte auf „Erneut versuchen“ klicken.",
         "stopped": "Die Analyse wurde vorzeitig beendet.",
         "no_comments": "Nach dem Filtern sind keine Kommentare übrig.",
         "sentiment_failed": "Das Sentiment-Modell hat für die meisten Kommentare kein Ergebnis geliefert.",
@@ -167,6 +190,13 @@ TEXTS = {
                  "much longer when the server is busy. Your selection is kept – "
                  "please click “Try again” later."),
         "retry": "🔄 Try again",
+        "cooldown": ("⏸️ The free online version pauses for {pause} minutes after each analysis so that the server "
+                     "is not throttled. The next analysis is possible in about {min} {min_word}. "
+                     "Your selection is kept – please click “Try again” then."),
+        "cooldown_hint": ("⏸️ Pause after the last analysis: the next analysis is possible in about {min} {min_word} "
+                          "(the free online version pauses for {pause} minutes after each run)."),
+        "minute": ("minute", "minutes"),
+        "cooldown_over": "✅ The pause is over – please click “Try again”.",
         "stopped": "The analysis was stopped early.",
         "no_comments": "No comments remain after filtering.",
         "sentiment_failed": "The sentiment model returned no result for most comments.",
@@ -199,6 +229,37 @@ def sample_note(lang: str, total: int, n: int) -> str:
 def _run_lock() -> threading.Lock:
     """Ein Lock fuer den ganzen App-Prozess: hoechstens eine Live-Analyse gleichzeitig."""
     return threading.Lock()
+
+
+class Cooldown:
+    """Pause nach jedem Live-Lauf fuer den ganzen App-Prozess (B2, Cloud-Nachtest 28.09.2026).
+
+    Reines Python, kein st.*-Zugriff: mark() darf im finally-Block einer abgebrochenen Sitzung
+    laufen, ohne StopException auszuloesen (siehe B1)."""
+
+    def __init__(self):
+        self.ready_at = 0.0
+
+    def mark(self, started: Optional[float], seconds: int, now: Optional[float] = None) -> None:
+        now = time.time() if now is None else now
+        if started is not None and seconds > 0 and now - started >= COOLDOWN_MIN_RUN_SECONDS:
+            self.ready_at = max(self.ready_at, now + seconds)
+
+    def remaining(self, now: Optional[float] = None) -> float:
+        now = time.time() if now is None else now
+        return max(0.0, self.ready_at - now)
+
+
+@st.cache_resource(show_spinner=False)
+def _cooldown() -> Cooldown:
+    return Cooldown()
+
+
+def _minutes_text(lang: str, seconds: float) -> Dict[str, object]:
+    minutes = max(1, int(-(-seconds // 60)))        # aufrunden, mindestens 1
+    words = TEXTS[lang]["minute"]
+    pause = max(1, round(live_cooldown_seconds() / 60))
+    return {"min": minutes, "min_word": words[0] if minutes == 1 else words[1], "pause": pause}
 
 
 def free_other_language_models(lang: str) -> None:
@@ -276,6 +337,14 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         st.session_state[k["status"]] = None
         return
 
+    # B2: Pause nach dem letzten Lauf? Vor acquire() pruefen – so bleibt kein st.*-Zugriff
+    # zwischen acquire() und try (B1). Die Anfrage bleibt erhalten wie bei "busy".
+    cooldown = _cooldown()
+    cooldown_seconds = live_cooldown_seconds()
+    if cooldown.remaining() > 0:
+        st.session_state[k["status"]] = "cooldown"
+        return
+
     lock = _run_lock()
     if not lock.acquire(blocking=False):
         # Eine andere Sitzung rechnet gerade – nicht parallel starten (RAM/CPU der Cloud).
@@ -284,6 +353,7 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         st.session_state[k["status"]] = "busy"
         return
     finished = False
+    started = None
     try:
         # Ab hier ist jeder st.*-Zugriff im try: Auch ein Abbruch genau jetzt gibt den Lock frei.
         # Erst mit dem Lock die Anfrage (Datei-Bytes) aus der Sitzung nehmen
@@ -334,6 +404,8 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         # Tab-Schliessen wirft jeder weitere st.*-Zugriff dieser Sitzung (auch st.session_state)
         # erneut StopException – schon im except-Block oben. Stand release() hinter einem
         # st.session_state-Zugriff, wurde es nie erreicht: "busy" fuer alle bis zum Reboot.
+        # Die Pause (B2) wird noch unter der Sperre gesetzt – reines Python, kein st.*-Zugriff.
+        cooldown.mark(started, cooldown_seconds)
         lock.release()
         try:
             if not finished and st.session_state.get(k["status"]) == "running":
@@ -361,15 +433,24 @@ def render_status(lang: str) -> None:
 
 
 def render_busy(lang: str) -> None:
-    """Meldung "andere Analyse laeuft" + "Erneut versuchen" – direkt ueber dem Startformular
+    """Meldung "andere Analyse laeuft" bzw. "Pause" (B2) + "Erneut versuchen" – direkt ueber dem Startformular
     (Cloud-Test N-b, Entscheidung Sandra 28.09.2026: oben auf der Seite wurde sie uebersehen)."""
     k = _keys(lang)
-    if st.session_state.get(k["status"]) != "busy":
-        return
     t = TEXTS[lang]
-    st.warning(t["busy"])
+    status = st.session_state.get(k["status"])
+    remaining = _cooldown().remaining()
+    if status not in ("busy", "cooldown"):
+        if remaining > 0:
+            st.info(t["cooldown_hint"].format(**_minutes_text(lang, remaining)))
+        return
+    if status == "busy":
+        st.warning(t["busy"])
+    elif remaining > 0:
+        st.warning(t["cooldown"].format(**_minutes_text(lang, remaining)))
+    else:
+        st.info(t["cooldown_over"])     # Pause inzwischen vorbei
     if st.session_state.get(k["request"]):
-        # Status bleibt "busy", bis erneut versucht oder neu gestartet wird (NEU7)
+        # Status bleibt "busy"/"cooldown", bis erneut versucht oder neu gestartet wird (NEU7)
         if st.button(t["retry"], key=f"live_retry_{lang}"):
             st.session_state[k["status"]] = "pending"
             st.rerun()

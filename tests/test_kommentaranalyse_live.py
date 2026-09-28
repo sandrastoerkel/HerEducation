@@ -705,3 +705,62 @@ def test_cooldown_message_next_to_start_button_and_retry(fake_models, monkeypatc
     at.run()
     assert not at.exception, at.exception
     assert at.session_state[f"live_{lang}_status"] == "done"
+
+
+# ---------------------------------------------------------------------------
+# K4 (28.09.2026): Spezial-Analysen auch in den Beispielanalysen
+# ---------------------------------------------------------------------------
+
+def _all_examples():
+    from utils.example_analyses import EXAMPLES
+    return [(DE_PAGE if e["lang"] == "de" else EN_PAGE, e) for e in EXAMPLES]
+
+
+def test_every_example_has_topic_labels_for_all_topics():
+    """Jede Themen-Nummer eines Beispiels hat einen Namen (sonst 'Topic 12' in der Anzeige)."""
+    from utils.example_analyses import EXAMPLES, EXAMPLES_DIR
+    from utils.example_topic_labels import load_labels
+    for example in EXAMPLES:
+        df = pd.read_csv(EXAMPLES_DIR / example["file"])
+        labels = load_labels(EXAMPLES_DIR / example["file"])
+        assert labels, example["file"]
+        missing = set(df["topic"].astype(int)) - set(labels)
+        assert not missing, (example["file"], sorted(missing)[:5])
+
+
+def test_topic_labels_are_reproducible():
+    """Die gespeicherten Namen entsprechen dem Skript (python -m utils.example_topic_labels)."""
+    import json
+    from utils.example_analyses import EXAMPLES, EXAMPLES_DIR
+    from utils.example_topic_labels import build_labels, label_path
+    for example in EXAMPLES:
+        csv_path = EXAMPLES_DIR / example["file"]
+        stored = json.loads(label_path(csv_path).read_text(encoding="utf-8"))
+        fresh = build_labels(pd.read_csv(csv_path), example["lang"])
+        assert stored["labels"] == fresh["labels"], example["file"]
+
+
+@pytest.mark.parametrize("page,example", _all_examples(), ids=lambda v: v["file"][:30] if isinstance(v, dict) else v)
+def test_example_shows_special_analysis_tab(page, example):
+    """Entscheidung Sandra 28.09.2026: Spezial-Analysen (Bildung/Gender/eigene Suche) auch in den Beispielen."""
+    from utils.example_analyses import load_example
+    at = AppTest.from_file(page, default_timeout=TIMEOUT)
+    at.run()
+    lang = example["lang"]
+    select = at.selectbox(key=f"example_select_{lang}")
+    select.set_value(example["label"])
+    at.button(key=f"example_button_{lang}").click()
+    at.run()
+    assert not at.exception, at.exception
+    assert at.session_state["example_label"] == example["label"]
+    tab_labels = [t.label for t in at.tabs]
+    special = "🔍 Spezial-Analysen" if lang == "de" else next((l for l in tab_labels if "Special" in l), None)
+    assert special in tab_labels, tab_labels
+    assert at.session_state["additional_data"]["topic_labels"]
+    text = _page_text(at)
+    assert "Spezialanalysen erfordern" not in text
+    # bekannt seit 25.09. (nicht Teil von K4): AppTest meldet nach dem Neustart per Knopf
+    # "set_page_config() can only be called once" auf Seite 05 -> hier ausgenommen
+    errors = [e.value for e in at.error if "set_page_config" not in str(e.value)]
+    assert not errors, errors
+    assert ("nachträglich" in text) if lang == "de" else ("computed afterwards" in text)

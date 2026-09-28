@@ -381,6 +381,8 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         st.session_state.df = df
         st.session_state.text_column = result["text_column"]
         st.session_state.additional_data = result.get("additional_data") or {}
+        for key in ("combined_topic_labels", "custom_topic_labels"):   # gehoerten zum vorigen Ergebnis
+            st.session_state.pop(key, None)
         st.session_state.current_file = request["name"]
         st.session_state.result_source = "live"
         st.session_state.example_lang = lang

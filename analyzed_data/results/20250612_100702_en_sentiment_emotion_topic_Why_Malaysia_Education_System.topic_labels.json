@@ -1,0 +1,101 @@
+{
+ "method": "c-TF-IDF wie BERTopic (tf je Thema L1-normiert x log(1 + A / f)) ueber clean_text; Namen mit utils/topic_labeling*.generate_smart_topic_labels",
+ "created": "2026-09-28",
+ "note": "Themen-Zuordnung aus dem Original-Lauf; Namen nachtraeglich berechnet (das Themen-Modell des Original-Laufs wurde nicht gespeichert).",
+ "labels": {
+  "-1": "Other Topics",
+  "0": "School & Education",
+  "1": "Agree & Distracting",
+  "2": "Really & Details",
+  "3": "Provides & Approach",
+  "4": "Shout & Speak",
+  "5": "Years & Year",
+  "6": "Name & Started"
+ },
+ "keywords": {
+  "0": [
+   "education",
+   "teachers",
+   "english",
+   "system",
+   "malaysia",
+   "students",
+   "school",
+   "even",
+   "schools",
+   "malay"
+  ],
+  "1": [
+   "agree",
+   "distracting",
+   "totally",
+   "true",
+   "cropped",
+   "biased",
+   "staying",
+   "scene",
+   "offtopic",
+   "figure"
+  ],
+  "2": [
+   "really",
+   "details",
+   "upvoted",
+   "enlighten",
+   "appreciate",
+   "inow",
+   "specific",
+   "intentionally",
+   "lmao",
+   "need"
+  ],
+  "3": [
+   "provides",
+   "acknowledge",
+   "talent",
+   "thanks",
+   "uec",
+   "valuable",
+   "immense",
+   "approach",
+   "honest",
+   "hard"
+  ],
+  "4": [
+   "shout",
+   "speak",
+   "eminem",
+   "uncontrollably",
+   "subjecteyespinkheartshape",
+   "smile",
+   "shoutout",
+   "snd",
+   "spill",
+   "milkshake"
+  ],
+  "5": [
+   "years",
+   "year",
+   "back",
+   "mrs",
+   "revert",
+   "indebted",
+   "emily",
+   "crossed",
+   "holidays",
+   "youve"
+  ],
+  "6": [
+   "name",
+   "started",
+   "join",
+   "procedures",
+   "whatapp",
+   "user",
+   "player",
+   "pieces",
+   "contact",
+   "welcome"
+  ]
+ }
+}

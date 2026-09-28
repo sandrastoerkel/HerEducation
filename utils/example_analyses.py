@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from utils.example_topic_labels import load_labels
 from utils.live_comment_analysis import (  # noqa: F401 – live_analysis_enabled: Rueckwaertskompatibilitaet
     fmt_int, is_live_result, live_analysis_enabled, render_live_result_info)
 
@@ -84,6 +85,8 @@ TEXTS = {
         "comments": "Kommentare",
         "current": "📄 Beispielanalyse",
         "back": "📂 Zurück zu den Beispielen",
+        "labels_note": ("Themen-Namen der Beispiele wurden nachträglich aus den typischen Wörtern je Thema "
+                        "berechnet; die Zuordnung der Kommentare zu den Themen stammt aus dem Original-Lauf."),
     },
     "en": {
         "title": "📂 Example analyses",
@@ -94,6 +97,8 @@ TEXTS = {
         "comments": "comments",
         "current": "📄 Example analysis",
         "back": "📂 Back to the examples",
+        "labels_note": ("Topic names of the examples were computed afterwards from the typical words of each topic; "
+                        "the assignment of comments to topics comes from the original run."),
     },
 }
 
@@ -136,7 +141,13 @@ def load_example(example: dict) -> None:
     st.session_state.df = df
     st.session_state.text_column = _text_column(df)
     st.session_state.current_file = example["source_name"]
-    st.session_state.additional_data = {}
+    # K4 (Entscheidung Sandra 28.09.2026): nachberechnete Themen-Namen -> Spezial-Analysen und
+    # "Emotionen je Thema" auch in den Beispielen. Ohne Themen-Modell bleibt der Tab Themen-Analyse aus.
+    labels = load_labels(EXAMPLES_DIR / example["file"])
+    st.session_state.additional_data = {"topic_labels": labels} if labels else {}
+    # Eigene Themen-Namen aus einem frueheren Live-Lauf gehoeren nicht zu diesem Beispiel
+    for key in ("combined_topic_labels", "custom_topic_labels"):
+        st.session_state.pop(key, None)
     st.session_state.example_label = example["label"]
     st.session_state.result_source = "example"
 
@@ -188,3 +199,5 @@ def render_example_picker(lang: str) -> None:
     df = st.session_state.get("df")
     if df is not None:
         st.info(f"{t['current']}: {st.session_state.get('example_label')} · {fmt_int(len(df), lang)} {t['comments']}")
+        if (st.session_state.get("additional_data") or {}).get("topic_labels"):
+            st.caption(t["labels_note"])

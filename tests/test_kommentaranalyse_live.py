@@ -482,10 +482,11 @@ def test_reader_csv_with_extra_fields_keeps_other_comments():
 
 
 def test_reader_single_column_csv_with_unquoted_comma():
-    """NEU1: einspaltige CSV, Kommentar mit unmaskiertem Komma -> restliche Zeilen bleiben richtig."""
-    texts = list(read_comments(b"text\nhello, world\nfoo\nbar\n")["comment_text"])
-    assert texts[1:] == ["foo", "bar"]
-    assert texts[0] == "hello"                       # Rest nach dem Komma geht verloren, Zeile bleibt zugeordnet
+    """NEU1 + Cloud-Test N-c (28.09.2026): einspaltige CSV, Kommentar mit Komma ohne
+    Anfuehrungszeichen -> ganzer Kommentar bleibt erhalten, restliche Zeilen richtig."""
+    df = read_comments(b"text\nhello, world\nfoo\nbar\n")
+    assert list(df["comment_text"]) == ["hello, world", "foo", "bar"]
+    assert df.attrs["irregular_rows"] == 0
 
 
 def test_mentions_after_zero_width_chars_are_masked():
@@ -573,3 +574,106 @@ def test_busy_keeps_request_and_retry_starts_run(fake_models):
     assert at.session_state["live_de_status"] == "done"
     assert at.session_state["result_source"] == "live"
     assert "live_de_request" not in at.session_state
+
+
+# ---------------------------------------------------------------------------
+# K3 (28.09.2026): Befunde Cloud-Test N-a, N-b, N-c, Obergrenze 100
+# (B1 Lauf-Sperre: tests/test_live_lock.py + tests/test_live_lock_browser.py)
+# ---------------------------------------------------------------------------
+
+def test_reader_single_column_keeps_quotes_multiline_and_many_commas():
+    """N-c: Anfuehrungszeichen, mehrzeilige Kommentare und mehrere Kommas bleiben unveraendert."""
+    data = ('text\n"quoted, with comma"\n"line one\nline two"\na, b, c, d\nsay "hi", ok\n\n'
+            'Semikolon; bleibt\n').encode("utf-8")
+    texts = list(read_comments(data)["comment_text"])
+    assert texts == ["quoted, with comma", "line one\nline two", "a, b, c, d", 'say "hi", ok',
+                     "Semikolon; bleibt"]
+
+
+def test_reader_single_column_other_header_names_and_masking():
+    """N-c: auch 'comment_text'/'Kommentar' als einzige Spalte; @-Namen weiter maskiert."""
+    df = read_comments("Kommentar\n@someone danke, super\n".encode("utf-8"))
+    assert list(df["comment_text"]) == ["@… danke, super"]
+
+
+def test_reader_multi_column_counts_irregular_rows_and_note():
+    """N-c: mehrspaltige Datei -> gekuerzte/uebersprungene Zeilen werden gezaehlt und gemeldet."""
+    from utils.comment_file_reader import reader_notes
+    data = b"text,author\na,x\nhello, world,y\nb,z\nc\n"
+    df = read_comments(data)
+    assert df.attrs["irregular_rows"] == 2          # 3 Felder bzw. 1 Feld statt 2
+    de, en = reader_notes(df, "de"), reader_notes(df, "en")
+    assert len(de) == 1 and "2 Zeilen" in de[0] and "Anführungszeichen" in de[0]
+    assert len(en) == 1 and "2 rows" in en[0]
+    clean = read_comments(b"text,author\na,x\nb,y\n")
+    assert clean.attrs["irregular_rows"] == 0 and reader_notes(clean, "de") == []
+
+
+def test_reader_semicolon_csv_unchanged():
+    """N-c darf das Excel-Format (Semikolon, mehrspaltig) nicht aendern."""
+    df = read_comments("text;autor\nHallo, Welt;x\nzwei;y\n".encode("utf-8"))
+    assert list(df["comment_text"]) == ["Hallo, Welt", "zwei"]
+    assert df.attrs["irregular_rows"] == 0
+
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_live_run_shows_reader_note(fake_models, page, lang):
+    """N-c: Hinweis zu gekuerzten Zeilen erscheint nach dem Lauf auf der Seite."""
+    rows = "\n".join(f"This is comment number {i} about school and learning,{i}" for i in range(30))
+    data = ("text,n\n" + rows + "\nbroken, row, with, commas,1\n").encode("utf-8")
+    at = _run_request(page, lang, data, "komma.csv")
+    assert at.session_state[f"live_{lang}_status"] == "done", _warnings(at)
+    captions = "\n".join(str(c.value) for c in at.caption)
+    assert ("1 Zeilen" in captions) or ("1 rows" in captions), captions
+
+
+@pytest.mark.parametrize("page,lang", [(DE_PAGE, "de"), (EN_PAGE, "en")])
+def test_busy_message_is_next_to_start_button(fake_models, page, lang):
+    """N-b: 'busy' + 'Erneut versuchen' stehen direkt ueber dem Startformular, nicht oben;
+    N-a: Text nennt keine unrealistischen '1–2 Minuten' mehr."""
+    from utils.live_comment_analysis import _run_lock
+    path = next(p for p in COMMENTS_DIR.iterdir() if ("Lanz" if lang == "de" else "Malaysia") in p.name)
+    lock = _run_lock()
+    assert lock.acquire(blocking=False)
+    try:
+        at = _run_request(page, lang, path.read_bytes(), path.name)
+    finally:
+        lock.release()
+    busy = [w for w in at.warning if ("andere Analyse" in str(w.value)) or ("Another analysis" in str(w.value))]
+    assert len(busy) == 1
+    assert "1–2" not in str(busy[0].value)
+    # Reihenfolge im Hauptbereich: Abschnitt "Eigene Analyse starten" -> busy-Meldung -> Retry -> Startknopf
+    def walk(node):
+        yield node
+        children = getattr(node, "children", None) or {}
+        for key in sorted(children):
+            yield from walk(children[key])
+
+    def label(e):
+        parts = []
+        for attr in ("value", "label"):
+            try:                                   # Diagramme u. a. haben keinen lesbaren Wert
+                parts.append(str(getattr(e, attr, "")))
+            except Exception:  # noqa: BLE001
+                parts.append("")
+        return "|".join(parts)
+
+    tree = [label(e) for e in walk(at.main)]
+    retry_label = "Erneut versuchen" if lang == "de" else "Try again"
+    idx_title = next(i for i, t in enumerate(tree) if ("Eigene Analyse starten" in t) or ("Run your own analysis" in t))
+    idx_busy = next(i for i, t in enumerate(tree) if ("andere Analyse" in t) or ("Another analysis" in t))
+    idx_retry = next(i for i, t in enumerate(tree) if retry_label in t and i != idx_busy)   # Meldung nennt den Knopf auch
+    idx_start = next(i for i, t in enumerate(tree) if "▶" in t)
+    assert idx_title < idx_busy < idx_retry < idx_start, (idx_title, idx_busy, idx_retry, idx_start)
+
+
+def test_cloud_default_limit_is_100(monkeypatch):
+    """Entscheidung Sandra 26.09.2026: Cloud-Obergrenze 100 (ohne Secret/Umgebungsvariable)."""
+    from utils import live_comment_analysis as L
+    assert L.CLOUD_DEFAULT_MAX_COMMENTS == 100
+    monkeypatch.delenv("HEREDUCATION_LIVE_MAX_COMMENTS", raising=False)
+    monkeypatch.setattr(L, "is_cloud", lambda: True)
+    monkeypatch.setattr(L, "_setting", lambda env, secret: None)
+    assert L.live_max_comments() == 100
+    monkeypatch.setattr(L, "is_cloud", lambda: False)
+    assert L.live_max_comments() is None

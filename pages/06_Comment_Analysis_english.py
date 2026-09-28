@@ -44,7 +44,7 @@ from utils.commentanalysis_english_file_handler import CommentAnalysisFileHandle
 from utils.commentanalysis_english_youtube import CommentAnalysisYouTube
 from utils.commentanalysis_english_ui import CommentAnalysisUI
 from utils.example_analyses import render_example_picker, known_source_names, repo_files_for_language
-from utils.comment_file_reader import CommentFileError, error_message, read_comments
+from utils.comment_file_reader import CommentFileError, error_message, read_comments, reader_notes
 from utils.live_comment_analysis import (
     LiveAnalysisError, check_sentiment_result, fmt_int, free_other_language_models, is_cloud,
     is_live_result, limit_comments, live_max_comments, render_live_section, render_result_download,
@@ -340,6 +340,7 @@ def run_live_analysis_en(file_obj, request, progress):
         df = read_comments(request["data"], request.get("name", ""))
     except CommentFileError as error:
         raise LiveAnalysisError(error_message(error, "en"))
+    notes.extend(reader_notes(df, "en"))   # Cloud-Test N-c: gekuerzte/uebersprungene Zeilen sichtbar machen
     text_column = 'comment_text'
     df = _keep_english(df, text_column, notes)
     if len(df) == 0:

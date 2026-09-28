@@ -17,7 +17,8 @@ Neuer Ablauf (Zustaende je Sprache in st.session_state):
 Einstellungen (Umgebungsvariable oder st.secrets):
   HEREDUCATION_LIVE_ANALYSIS / live_analysis        -> 0 schaltet die Live-Analyse ab (Standard: an)
   HEREDUCATION_LIVE_MAX_COMMENTS / live_max_comments -> Obergrenze Kommentare je Lauf
-      (Standard: Cloud 300 laut MESS1-Empfehlung 300–500, lokal ohne Grenze; 0 = ohne Grenze)
+      (Standard: Cloud 100 – Entscheidung Sandra 26.09.2026 nach Cloud-Test (CPU-Drosselung
+      schon nach 2 Laeufen a 300); lokal ohne Grenze; 0 = ohne Grenze)
 """
 import gc
 import os
@@ -37,7 +38,7 @@ try:  # Streamlit 1.45: st.stop() wirft StopException (BaseException, nicht Exce
 except ImportError:  # pragma: no cover – andere Streamlit-Version
     StopException = None
 
-CLOUD_DEFAULT_MAX_COMMENTS = 300   # vorsichtiger Startwert (MESS1: 300–500), nach Cloud-Test anpassen
+CLOUD_DEFAULT_MAX_COMMENTS = 100   # Entscheidung Sandra 26.09.2026 (Cloud-Test B2: Drosselung nach 2 Laeufen a 300)
 SAMPLE_SEED = 42                   # feste Stichprobe -> gleiche Datei = gleiche Auswahl
 SENTIMENT_FAIL_LIMIT = 0.5         # mehr als die Haelfte ohne Modell-Ergebnis -> Lauf gilt als gescheitert (M6)
 MAX_UPLOAD_MB = 10                 # passt zu server.maxUploadSize in .streamlit/config.toml
@@ -126,8 +127,9 @@ TEXTS = {
         "unexpected": "Unerwarteter Fehler ({err}). Bitte mit einer kleineren Datei erneut versuchen.",
         "download": "⬇️ Ergebnis als CSV herunterladen",
         "stage_unknown": "unbekannter Schritt",
-        "busy": ("⏳ Gerade läuft eine andere Analyse auf diesem Server. "
-                 "Bitte in 1–2 Minuten erneut versuchen."),
+        "busy": ("⏳ Gerade läuft eine andere Analyse auf diesem Server. Ein Lauf dauert einige Minuten, "
+                 "bei hoher Serverauslastung auch deutlich länger. Die Auswahl bleibt gemerkt – "
+                 "bitte später auf „Erneut versuchen“ klicken."),
         "retry": "🔄 Erneut versuchen",
         "stopped": "Die Analyse wurde vorzeitig beendet.",
         "no_comments": "Nach dem Filtern sind keine Kommentare übrig.",
@@ -161,8 +163,9 @@ TEXTS = {
         "unexpected": "Unexpected error ({err}). Please try again with a smaller file.",
         "download": "⬇️ Download result as CSV",
         "stage_unknown": "unknown step",
-        "busy": ("⏳ Another analysis is currently running on this server. "
-                 "Please try again in 1–2 minutes."),
+        "busy": ("⏳ Another analysis is currently running on this server. A run takes a few minutes, "
+                 "much longer when the server is busy. Your selection is kept – "
+                 "please click “Try again” later."),
         "retry": "🔄 Try again",
         "stopped": "The analysis was stopped early.",
         "no_comments": "No comments remain after filtering.",
@@ -280,13 +283,13 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         # (Nachreview NEU7, 26.09.2026: frueher war sie hier schon verworfen).
         st.session_state[k["status"]] = "busy"
         return
-    # Erst mit dem Lock die Anfrage (Datei-Bytes) aus der Sitzung nehmen
-    request = st.session_state.pop(k["request"])
-
-    st.session_state[k["status"]] = "running"
-    st.session_state[k["stage"]] = None
     finished = False
     try:
+        # Ab hier ist jeder st.*-Zugriff im try: Auch ein Abbruch genau jetzt gibt den Lock frei.
+        # Erst mit dem Lock die Anfrage (Datei-Bytes) aus der Sitzung nehmen
+        request = st.session_state.pop(k["request"])
+        st.session_state[k["status"]] = "running"
+        st.session_state[k["stage"]] = None
         st.subheader(t["running_title"])
         st.info(t["running_info"])
         started = time.time()
@@ -327,10 +330,16 @@ def run_pending_analysis(lang: str, runner: Runner, steps: List[str]) -> None:
         st.session_state[k["error"]] = t["unexpected"].format(err=type(error).__name__)
         finished = True
     finally:
-        if not finished and st.session_state.get(k["status"]) == "running":
-            st.session_state[k["status"]] = "interrupted"
+        # B1 (Cloud-Test 26.09.2026, kritisch): Lock ZUERST freigeben. Nach Stop, Neuladen oder
+        # Tab-Schliessen wirft jeder weitere st.*-Zugriff dieser Sitzung (auch st.session_state)
+        # erneut StopException – schon im except-Block oben. Stand release() hinter einem
+        # st.session_state-Zugriff, wurde es nie erreicht: "busy" fuer alle bis zum Reboot.
         lock.release()
-        gc.collect()
+        try:
+            if not finished and st.session_state.get(k["status"]) == "running":
+                st.session_state[k["status"]] = "interrupted"
+        finally:
+            gc.collect()
     st.rerun()
 
 
@@ -346,17 +355,25 @@ def render_status(lang: str) -> None:
         # Review N3: Wurde der Lauf durch einen Klick auf das (noch sichtbare) Startformular
         # unterbrochen, startet dieser Klick NICHT sofort einen neuen Lauf.
         st.session_state[k["ignore_submit"]] = True
-    elif status == "busy":
-        st.warning(t["busy"])
-        if st.session_state.get(k["request"]):
-            # Status bleibt "busy", bis erneut versucht oder neu gestartet wird (NEU7)
-            if st.button(t["retry"], key=f"live_retry_{lang}"):
-                st.session_state[k["status"]] = "pending"
-                st.rerun()
-        else:
-            st.session_state[k["status"]] = None
     elif status == "failed":
         st.warning(t["failed"].format(msg=st.session_state.get(k["error"], "")))
+        st.session_state[k["status"]] = None
+
+
+def render_busy(lang: str) -> None:
+    """Meldung "andere Analyse laeuft" + "Erneut versuchen" – direkt ueber dem Startformular
+    (Cloud-Test N-b, Entscheidung Sandra 28.09.2026: oben auf der Seite wurde sie uebersehen)."""
+    k = _keys(lang)
+    if st.session_state.get(k["status"]) != "busy":
+        return
+    t = TEXTS[lang]
+    st.warning(t["busy"])
+    if st.session_state.get(k["request"]):
+        # Status bleibt "busy", bis erneut versucht oder neu gestartet wird (NEU7)
+        if st.button(t["retry"], key=f"live_retry_{lang}"):
+            st.session_state[k["status"]] = "pending"
+            st.rerun()
+    else:
         st.session_state[k["status"]] = None
 
 
@@ -405,6 +422,7 @@ def render_live_section(lang: str, repo_files: List) -> None:
     if max_comments:
         caption += " " + t["limit_note"].format(n=max_comments)
     st.caption(caption)
+    render_busy(lang)
 
     repo_files = [str(p) for p in (repo_files or [])]
     sources = [t["source_repo"], t["source_upload"]] if repo_files else [t["source_upload"]]

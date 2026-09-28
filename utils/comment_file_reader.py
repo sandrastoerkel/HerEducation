@@ -15,16 +15,23 @@ Regeln:
 - Ergebnis: DataFrame mit genau den Spalten comment_text und original_line
   (Nummer des Datensatzes in der Datei, ab 1). Autor, Zeit, IDs usw. werden bewusst
   NICHT uebernommen (Datenvorschau zeigt keine Nutzernamen).
+- Einspaltige CSV (Kopfzeile nur "text" o. Ae.): jede Zeile ist GANZ ein Kommentar, auch mit
+  Kommas ohne Anfuehrungszeichen (Cloud-Test N-c, Entscheidung Sandra 28.09.2026 – frueher
+  fehlte der Text nach dem ersten Komma ohne Hinweis).
+- Mehrspaltige CSV: Zeilen mit mehr oder weniger Feldern als die Kopfzeile werden gezaehlt
+  (df.attrs["irregular_rows"]); reader_notes() macht daraus einen Hinweis fuer die Seite.
 - Leere Kommentare werden entfernt. Kein Treffer -> CommentFileError mit Grund.
 - YouTube-Namen in Antworten ("@name ...") werden durch "@…" ersetzt (Entscheidung Sandra
   25.09.2026: keine Nutzernamen in der oeffentlichen Datenvorschau). Gilt fuer jedes @-Wort
   am Textanfang, nach einem Leerzeichen oder nach einem unsichtbaren Zeichen (Zero-Width-Space);
   E-Mail-Adressen bleiben unberuehrt.
 """
+import csv
 import io
 import json
 import re
-from typing import List, Optional
+import warnings
+from typing import List, Optional, Tuple
 
 import pandas as pd
 
@@ -112,14 +119,58 @@ def _read_json_list(text: str) -> List[Optional[str]]:
     return _records_to_texts(data)
 
 
-def _read_csv(text: str) -> List[Optional[str]]:
-    """CSV mit Kopfzeile; probiert Komma, Semikolon (Excel DE) und Tab."""
+DELIMITERS = (",", ";", "\t")
+
+
+def _csv_rows(text: str, delimiter: str) -> List[List[str]]:
+    return list(csv.reader(io.StringIO(text), delimiter=delimiter))
+
+
+def _single_column_texts(text: str) -> Optional[List[Optional[str]]]:
+    """Einspaltige Datei mit Textspalten-Kopfzeile -> jede Zeile ganz (N-c).
+
+    Das csv-Modul beachtet Anfuehrungszeichen (auch mehrzeilige Kommentare); Felder, die an
+    einem Komma ohne Anfuehrungszeichen getrennt wurden, werden mit genau diesem Komma
+    wieder zusammengesetzt – der Kommentar bleibt unveraendert.
+    """
+    try:
+        rows = _csv_rows(text, ",")
+    except csv.Error:
+        return None
+    if not rows:
+        return None
+    header = rows[0]
+    # Kopfzeile genau ein Feld mit bekanntem Namen ("text;author" ist hier EIN Feld ohne Treffer)
+    if len(header) != 1 or _pick_text_key(header) is None:
+        return None
+    return [",".join(row) if row else None for row in rows[1:]]
+
+
+def _count_irregular_rows(text: str, delimiter: str, n_columns: int) -> int:
+    """Zeilen, deren Feldzahl nicht zur Kopfzeile passt (werden von pandas gekuerzt/uebersprungen)."""
+    try:
+        rows = _csv_rows(text, delimiter)
+    except csv.Error:
+        return 0
+    return sum(1 for row in rows[1:] if row and any(f.strip() for f in row) and len(row) != n_columns)
+
+
+def _read_csv(text: str) -> Tuple[List[Optional[str]], int]:
+    """CSV mit Kopfzeile; probiert Komma, Semikolon (Excel DE) und Tab.
+    Ergebnis: (Texte, Anzahl unregelmaessiger Zeilen)."""
+    single = _single_column_texts(text)
+    if single is not None:
+        return single, 0
     columns_seen = []
     last_error = None
-    for delimiter in (",", ";", "\t"):
+    for delimiter in DELIMITERS:
         try:
-            df = pd.read_csv(io.StringIO(text), sep=delimiter, dtype=str, keep_default_na=False,
-                             engine="python", on_bad_lines="skip", index_col=False)
+            with warnings.catch_warnings():
+                # ParserWarning bei zu vielen Feldern: wird jetzt gezaehlt und den Nutzer:innen
+                # gemeldet (N-c), im Server-Log nur Rauschen
+                warnings.simplefilter("ignore", pd.errors.ParserWarning)
+                df = pd.read_csv(io.StringIO(text), sep=delimiter, dtype=str, keep_default_na=False,
+                                 engine="python", on_bad_lines="skip", index_col=False)
             # index_col=False (Nachreview NEU1): Sonst macht pandas bei einer Zeile mit
             # ueberzaehligen Feldern die vorderen Spalten zum Index und verschiebt alle Texte.
         except Exception as error:  # noqa: BLE001 – naechstes Trennzeichen probieren
@@ -127,7 +178,7 @@ def _read_csv(text: str) -> List[Optional[str]]:
             continue
         key = _pick_text_key(df.columns)
         if key is not None:
-            return df[key].tolist()
+            return df[key].tolist(), _count_irregular_rows(text, delimiter, len(df.columns))
         columns_seen = list(map(str, df.columns))
     if not columns_seen and last_error is not None:
         raise CommentFileError("unreadable", type(last_error).__name__)
@@ -140,12 +191,13 @@ def read_comments(data: bytes, name: str = "") -> pd.DataFrame:
     if not text.strip():
         raise CommentFileError("empty")
     fmt = detect_format(text)
+    irregular = 0
     if fmt == "jsonl":
         texts = _read_jsonl(text)
     elif fmt == "json":
         texts = _read_json_list(text)
     else:
-        texts = _read_csv(text)
+        texts, irregular = _read_csv(text)
 
     rows = []
     for number, value in enumerate(texts, start=1):
@@ -156,7 +208,9 @@ def read_comments(data: bytes, name: str = "") -> pd.DataFrame:
             rows.append({OUTPUT_COLUMN: comment, "original_line": number})
     if not rows:
         raise CommentFileError("empty")
-    return pd.DataFrame(rows, columns=[OUTPUT_COLUMN, "original_line"])
+    df = pd.DataFrame(rows, columns=[OUTPUT_COLUMN, "original_line"])
+    df.attrs["irregular_rows"] = irregular
+    return df
 
 
 # Meldungen fuer Besucher:innen (Seiten DE/EN)
@@ -174,6 +228,26 @@ MESSAGES = {
         "unreadable": "The file could not be read (expected: CSV with header row or JSON Lines).",
     },
 }
+
+
+NOTES = {
+    "de": ("⚠️ {k} Zeilen der Datei haben mehr oder weniger Felder als die Kopfzeile (z. B. Kommas "
+           "ohne Anführungszeichen) und wurden gekürzt oder übersprungen. Tipp: den Kommentartext "
+           "in Anführungszeichen setzen."),
+    "en": ("⚠️ {k} rows of the file have more or fewer fields than the header row (e.g. commas "
+           "without quotation marks) and were shortened or skipped. Tip: put the comment text "
+           "in quotation marks."),
+}
+
+
+def reader_notes(df: pd.DataFrame, lang: str) -> List[str]:
+    """Hinweise zum Einlesen fuer die Seite (N-c). Direkt nach read_comments() aufrufen –
+    spaetere Filter/Stichproben uebernehmen df.attrs nicht zuverlaessig."""
+    k = int(df.attrs.get("irregular_rows", 0) or 0)
+    if not k:
+        return []
+    number = f"{k:,}".replace(",", ".") if lang == "de" else f"{k:,}"
+    return [NOTES.get(lang, NOTES["en"]).format(k=number)]
 
 
 def error_message(error: CommentFileError, lang: str) -> str:
